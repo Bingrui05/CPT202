@@ -13,12 +13,12 @@ public class DashboardController {
     private DashboardService dashboardService;
 
     @GetMapping("/customer/{id}")
-public CustomerDashboardResponse getCustomerDashboard(@PathVariable Long id) {
-    return dashboardService.getCustomerDashboard(id);
-}
+    public CustomerDashboardResponse getCustomerDashboard(@PathVariable Long id) {
+        return dashboardService.getCustomerDashboard(id);
+    }
 
     @GetMapping("/specialist/{id}")
-    public CustomerDashboardResponse getSpecialistDashboard(@PathVariable Long id) {
+    public String getSpecialistDashboard(@PathVariable Long id) {
         return dashboardService.getSpecialistDashboard(id);
     }
 }

@@ -1,20 +1,21 @@
 package cpt2021.test.dto;
 
+import java.util.List;
+
 public class CustomerDashboardResponse {
-
     private Long customerId;
-    private String message;
+    private List<BookingSummary> bookings;
 
-    public CustomerDashboardResponse(Long customerId, String message) {
+    public CustomerDashboardResponse(Long customerId, List<BookingSummary> bookings) {
         this.customerId = customerId;
-        this.message = message;
+        this.bookings = bookings;
     }
 
     public Long getCustomerId() {
         return customerId;
     }
 
-    public String getMessage() {
-        return message;
+    public List<BookingSummary> getBookings() {
+        return bookings;
     }
 }
