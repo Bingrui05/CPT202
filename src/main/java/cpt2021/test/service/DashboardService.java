@@ -15,15 +15,31 @@ public class DashboardService {
     public CustomerDashboardResponse getCustomerDashboard(Long id) {
         // 模拟：只有 customerId = 1 才有数据
     if (!id.equals(1L)) {
-        return new CustomerDashboardResponse(id, List.of());
-    }
-        List<BookingSummary> bookings = Arrays.asList(
-                new BookingSummary(1L, "Dr. Smith", "2026-03-30 10:00", "Pending"),
-                new BookingSummary(2L, "Dr. Lee", "2026-04-02 14:00", "Completed")
+        return new CustomerDashboardResponse(
+                id,
+                List.of(),
+                List.of(),
+                List.of()
         );
-
-        return new CustomerDashboardResponse(id, bookings);
     }
+
+    List<BookingSummary> upcoming = Arrays.asList(
+            new BookingSummary(1L, "Dr. Smith", "2026-03-30 10:00", "Pending")
+    );
+
+    List<BookingSummary> completed = Arrays.asList(
+            new BookingSummary(2L, "Dr. Lee", "2026-04-02 14:00", "Completed")
+    );
+
+    List<BookingSummary> cancelled = List.of(); // 暂时没有
+
+    return new CustomerDashboardResponse(
+            id,
+            upcoming,
+            completed,
+            cancelled
+    );
+}
 
     public SpecialistDashboardResponse getSpecialistDashboard(Long id) {
        // 模拟：只有 specialistId = 1 才有数据
