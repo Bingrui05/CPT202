@@ -1,20 +1,23 @@
 package cpt2021.test.controller;
 
+import cpt2021.test.service.DashboardService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
-    // Customer dashboard
+    @Autowired
+    private DashboardService dashboardService;
+
     @GetMapping("/customer/{id}")
     public String getCustomerDashboard(@PathVariable Long id) {
-        return "Customer dashboard for user " + id;
+        return dashboardService.getCustomerDashboard(id);
     }
 
-    // Specialist dashboard
     @GetMapping("/specialist/{id}")
     public String getSpecialistDashboard(@PathVariable Long id) {
-        return "Specialist dashboard for specialist " + id;
+        return dashboardService.getSpecialistDashboard(id);
     }
 }
