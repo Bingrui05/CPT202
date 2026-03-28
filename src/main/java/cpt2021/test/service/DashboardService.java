@@ -2,6 +2,8 @@ package cpt2021.test.service;
 
 import cpt2021.test.dto.BookingSummary;
 import cpt2021.test.dto.CustomerDashboardResponse;
+import cpt2021.test.dto.ScheduleItem;
+import cpt2021.test.dto.SpecialistDashboardResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -19,7 +21,26 @@ public class DashboardService {
         return new CustomerDashboardResponse(id, bookings);
     }
 
-    public String getSpecialistDashboard(Long id) {
-        return "Mock specialist dashboard data for specialist " + id;
+    public SpecialistDashboardResponse getSpecialistDashboard(Long id) {
+        List<ScheduleItem> pendingRequests = Arrays.asList(
+            new ScheduleItem(1L, "Alice", "2026-03-30 10:00", "Pending"),
+            new ScheduleItem(2L, "Bob", "2026-03-31 11:00", "Pending")
+    );
+
+    List<ScheduleItem> upcomingSessions = Arrays.asList(
+            new ScheduleItem(3L, "Cindy", "2026-04-02 14:00", "Confirmed")
+    );
+
+    List<ScheduleItem> completedSessions = Arrays.asList(
+            new ScheduleItem(4L, "David", "2026-03-20 09:00", "Completed")
+    );
+
+    return new SpecialistDashboardResponse(
+            id,
+            pendingRequests,
+            upcomingSessions,
+            completedSessions
+    );
+
     }
 }

@@ -1,6 +1,7 @@
 package cpt2021.test.controller;
 
 import cpt2021.test.dto.CustomerDashboardResponse;
+import cpt2021.test.dto.SpecialistDashboardResponse;
 import cpt2021.test.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class DashboardController {
     }
 
     @GetMapping("/specialist/{id}")
-    public String getSpecialistDashboard(@PathVariable Long id) {
+    public SpecialistDashboardResponse getSpecialistDashboard(@PathVariable Long id) {
         return dashboardService.getSpecialistDashboard(id);
     }
 }
