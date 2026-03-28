@@ -13,6 +13,10 @@ import java.util.List;
 public class DashboardService {
 
     public CustomerDashboardResponse getCustomerDashboard(Long id) {
+        // 模拟：只有 customerId = 1 才有数据
+    if (!id.equals(1L)) {
+        return new CustomerDashboardResponse(id, List.of());
+    }
         List<BookingSummary> bookings = Arrays.asList(
                 new BookingSummary(1L, "Dr. Smith", "2026-03-30 10:00", "Pending"),
                 new BookingSummary(2L, "Dr. Lee", "2026-04-02 14:00", "Completed")
@@ -22,6 +26,15 @@ public class DashboardService {
     }
 
     public SpecialistDashboardResponse getSpecialistDashboard(Long id) {
+       // 模拟：只有 specialistId = 1 才有数据
+    if (!id.equals(1L)) {
+        return new SpecialistDashboardResponse(
+                id,
+                List.of(),
+                List.of(),
+                List.of()
+        );
+    }
         List<ScheduleItem> pendingRequests = Arrays.asList(
             new ScheduleItem(1L, "Alice", "2026-03-30 10:00", "Pending"),
             new ScheduleItem(2L, "Bob", "2026-03-31 11:00", "Pending")
