@@ -4,12 +4,12 @@ spring:
     username: "root"
     password: "Zjn150523"
     driver-class-name: "com.mysql.cj.jdbc.Driver"
-
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-
   application:
     name: "test"
-    
+
+jwt:
+  secret: mySecretKey1234567890mySecretKey123456
