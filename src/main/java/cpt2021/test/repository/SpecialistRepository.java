@@ -10,9 +10,23 @@ import java.util.Optional;
 
 public interface SpecialistRepository extends JpaRepository<Specialist, Long> {
 
-	@Query("SELECT s FROM Specialist s JOIN FETCH s.expertiseCategory JOIN FETCH s.level")
-	List<Specialist> findAllFetched();
+    @Query("SELECT s FROM Specialist s JOIN FETCH s.expertiseCategory JOIN FETCH s.level")
+    List<Specialist> findAllFetched();
 
-	@Query("SELECT s FROM Specialist s JOIN FETCH s.expertiseCategory JOIN FETCH s.level WHERE s.id = :id")
-	Optional<Specialist> findByIdFetched(@Param("id") Long id);
+    @Query("SELECT s FROM Specialist s JOIN FETCH s.expertiseCategory JOIN FETCH s.level WHERE s.id = :id")
+    Optional<Specialist> findByIdFetched(@Param("id") Long id);
+
+    @Query("""
+        SELECT s FROM Specialist s
+        WHERE (:name IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :name, '%')))
+          AND (:status IS NULL OR s.status = :status)
+          AND (:level IS NULL OR s.level.name = :level)
+          AND (:category IS NULL OR s.expertiseCategory.name = :category)
+    """)
+    List<Specialist> searchSpecialists(
+            @Param("name") String name,
+            @Param("status") String status,
+            @Param("level") String level,
+            @Param("category") String category
+    );
 }
