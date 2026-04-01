@@ -11,29 +11,49 @@ import jakarta.persistence.Table;
 @Table(name = "expertise_category")
 public class ExpertiseCategory {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(nullable = false, unique = true, length = 128)
-	private String name;
+    @Column(nullable = false, unique = true, length = 128)
+    private String name;
 
-	protected ExpertiseCategory() {
-	}
+    @Column(nullable = false)
+    private String status;
 
-	public ExpertiseCategory(String name) {
-		this.name = name;
-	}
+    public ExpertiseCategory() {
+    }
 
-	public Long getId() {
-		return id;
-	}
+    public ExpertiseCategory(String name) {
+        this.name = name;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public ExpertiseCategory(String name, String status) {
+        this.name = name;
+        this.status = status;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

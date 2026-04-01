@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Expertise Category</title>
+</head>
+<body>
+    <h1>Add Expertise Category</h1>
+
+    <form th:action="@{/categories}" th:object="${category}" method="post">
+        <div>
+            <label>Name:</label>
+            <input type="text" th:field="*{name}" />
+        </div>
+        <div>
+            <label>Status:</label>
+            <input type="text" th:field="*{status}" />
+        </div>
+        <div>
+            <button type="submit">Save</button>
+        </div>
+    </form>
+
+    <a th:href="@{/categories}">Back to List</a>
+</body>
+</html>
