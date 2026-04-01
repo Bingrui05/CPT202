@@ -1,6 +1,7 @@
 package cpt2021.test.dto;
 
 public class CreateBookingRequest {
+
     private Long customerId;
     private Long specialistId;
     private Long slotId;

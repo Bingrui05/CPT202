@@ -11,7 +11,7 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 先用 ID 占位，后面再改成真正的实体关联
+    // 基础字段（保留你这边）
     @Column(nullable = false)
     private Long customerId;
 
@@ -31,10 +31,15 @@ public class Booking {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    // ⭐ 新增：兼容 booking-reschedule
+    @OneToOne
+    private AvailabilitySlot availabilitySlot;
+
     public Booking() {
     }
 
-    public Booking(Long customerId, Long specialistId, Long slotId, Long pricingId, BookingStatus status, LocalDateTime createdAt) {
+    public Booking(Long customerId, Long specialistId, Long slotId,
+                   Long pricingId, BookingStatus status, LocalDateTime createdAt) {
         this.customerId = customerId;
         this.specialistId = specialistId;
         this.slotId = slotId;
@@ -45,6 +50,10 @@ public class Booking {
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getCustomerId() {
@@ -93,5 +102,13 @@ public class Booking {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public AvailabilitySlot getAvailabilitySlot() {
+        return availabilitySlot;
+    }
+
+    public void setAvailabilitySlot(AvailabilitySlot availabilitySlot) {
+        this.availabilitySlot = availabilitySlot;
     }
 }

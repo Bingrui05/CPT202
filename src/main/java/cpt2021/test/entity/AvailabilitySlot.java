@@ -1,20 +1,10 @@
 package cpt2021.test.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import jakarta.persistence.*; // 注意：Spring Boot 3 使用的是 jakarta 包
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * 可约时间段实体类
- * 已完美适配 cpt2021.test 团队规范
- */
 @Entity
 @Table(name = "availability_slots")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class AvailabilitySlot {
 
     @Id
@@ -22,7 +12,7 @@ public class AvailabilitySlot {
     private Long id;
 
     @Column(nullable = false)
-    private Long specialistId; // 关联的专家ID
+    private Long specialistId;
 
     @Column(nullable = false)
     private LocalDateTime startTime;
@@ -32,4 +22,64 @@ public class AvailabilitySlot {
 
     @Column(nullable = false)
     private String status; // AVAILABLE, BOOKED, CANCELLED
+
+    public AvailabilitySlot() {
+    }
+
+    public AvailabilitySlot(Long id, Long specialistId, LocalDateTime startTime, LocalDateTime endTime, String status) {
+        this.id = id;
+        this.specialistId = specialistId;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = status;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSpecialistId() {
+        return specialistId;
+    }
+
+    public void setSpecialistId(Long specialistId) {
+        this.specialistId = specialistId;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    // 兼容 booking-reschedule 里可能调用的 available 逻辑
+    public boolean isAvailable() {
+        return "AVAILABLE".equalsIgnoreCase(status);
+    }
+
+    public void setAvailable(boolean available) {
+        this.status = available ? "AVAILABLE" : "BOOKED";
+    }
 }

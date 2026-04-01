@@ -12,10 +12,6 @@ import java.util.List;
 @Repository
 public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySlot, Long> {
 
-    /**
-     * 核心逻辑：查找某个专家在指定时间段内是否有重叠的预约
-     * 逻辑：已有开始时间 < 新结束时间 AND 已有结束时间 > 新开始时间
-     */
     @Query("SELECT a FROM AvailabilitySlot a WHERE a.specialistId = :specId " +
            "AND a.startTime < :end AND a.endTime > :start")
     List<AvailabilitySlot> findOverlappingSlots(
