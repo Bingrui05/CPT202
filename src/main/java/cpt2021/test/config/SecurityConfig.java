@@ -29,11 +29,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/", "/test", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/", "/test", "/h2-console/**", "/register.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())); // 允许 H2 控制台显示
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         return http.build();
     }
 }
