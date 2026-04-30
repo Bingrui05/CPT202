@@ -1,15 +1,19 @@
 spring:
   datasource:
-    url: "jdbc:mysql://localhost:3306/cpt202_test?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+    url: "jdbc:mysql://localhost:3306/consultation_booking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
     username: "root"
-    password: "Zjn150523"
+    password: "123456"
     driver-class-name: "com.mysql.cj.jdbc.Driver"
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate.format_sql: true
 
   application:
     name: "test"
-    
+
+server:
+  port: 8080
