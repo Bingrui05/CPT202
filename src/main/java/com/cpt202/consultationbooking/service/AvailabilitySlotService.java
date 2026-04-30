@@ -5,6 +5,7 @@ import com.cpt202.consultationbooking.dto.response.SlotResponse;
 import com.cpt202.consultationbooking.entity.AvailabilitySlot;
 import com.cpt202.consultationbooking.entity.Specialist;
 import com.cpt202.consultationbooking.enums.SlotStatus;
+import com.cpt202.consultationbooking.exception.BusinessException;
 import com.cpt202.consultationbooking.exception.ResourceNotFoundException;
 import com.cpt202.consultationbooking.repository.AvailabilitySlotRepository;
 import com.cpt202.consultationbooking.repository.SpecialistRepository;
@@ -31,12 +32,20 @@ public class AvailabilitySlotService {
         Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
 
+        if (request.getStartTime() != null && request.getEndTime() != null) {
+            if (!request.getStartTime().isBefore(request.getEndTime())) {
+                throw new BusinessException("Start time must be before end time");
+            }
+        }
+
+        SlotStatus status = request.getStatus() != null ? request.getStatus() : SlotStatus.AVAILABLE;
+
         AvailabilitySlot slot = AvailabilitySlot.builder()
                 .specialist(specialist)
                 .date(request.getDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .status(SlotStatus.AVAILABLE)
+                .status(status)
                 .build();
 
         AvailabilitySlot saved = slotRepository.save(slot);
