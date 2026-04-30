@@ -100,6 +100,10 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BusinessException("Booking has already been cancelled");
+        }
+
         if (booking.getStatus() == BookingStatus.COMPLETED) {
             throw new BusinessException("COMPLETED booking cannot be cancelled");
         }
@@ -130,6 +134,9 @@ public class BookingService {
     }
 
     public List<BookingResponse> getBookingsByCustomer(Long customerId) {
+        if (!customerRepository.existsById(customerId)) {
+            throw new ResourceNotFoundException("Customer not found");
+        }
         return bookingRepository.findByCustomer_CustomerId(customerId)
                 .stream()
                 .map(this::toResponse)
@@ -137,6 +144,9 @@ public class BookingService {
     }
 
     public List<BookingResponse> getBookingsBySpecialist(Long specialistId) {
+        if (!specialistRepository.existsById(specialistId)) {
+            throw new ResourceNotFoundException("Specialist not found");
+        }
         return bookingRepository.findBySpecialist_SpecialistId(specialistId)
                 .stream()
                 .map(this::toResponse)
