@@ -1,5 +1,6 @@
 package com.cpt202.consultationbooking.dto.request;
 
+import com.cpt202.consultationbooking.enums.SlotStatus;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,13 +19,16 @@ public class CreateSlotRequest {
     @NotNull(message = "End time is required")
     private LocalTime endTime;
 
+    private SlotStatus status;
+
     public CreateSlotRequest() {}
 
-    public CreateSlotRequest(Long specialistId, LocalDate date, LocalTime startTime, LocalTime endTime) {
+    public CreateSlotRequest(Long specialistId, LocalDate date, LocalTime startTime, LocalTime endTime, SlotStatus status) {
         this.specialistId = specialistId;
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.status = status;
     }
 
     public Long getSpecialistId() { return specialistId; }
@@ -35,4 +39,6 @@ public class CreateSlotRequest {
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
     public LocalTime getEndTime() { return endTime; }
     public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+    public SlotStatus getStatus() { return status; }
+    public void setStatus(SlotStatus status) { this.status = status; }
 }
