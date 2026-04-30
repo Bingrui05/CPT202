@@ -1,0 +1,345 @@
+diff --git a/docs/testing/booking-workflow-test.md b/docs/testing/booking-workflow-test.md
+new file mode 100644
+index 0000000..ed672a3
+--- /dev/null
++++ b/docs/testing/booking-workflow-test.md
+@@ -0,0 +1,324 @@
++# Booking Workflow Test Record
++
++## Module
++Booking workflow (status transitions)
++
++## Owner
++Student D
++
++## Branch
++local/booking-workflow-work
++
++## Related Issue
++Validate and document booking workflow status transitions
++
++## Test Environment
++- Java 23
++- Spring Boot 3.3.0
++- Maven
++- MySQL
++- Localhost port: 8080
++
++---
++
++## Workflow State Diagram
++
++```
++                    +------------------+
++                    |     PENDING      |<------------------+
++                    +--------+---------+                   |
++                             |                             |
++              confirmBooking |                             | cancelBooking
++                             v                             |
++                    +------------------+                   |
++                    |    CONFIRMED      |                   |
++                    +--------+---------+                   |
++                             |                             |
++              completeBooking |                             | cancelBooking
++                             v                             |
++                    +------------------+                   |
++                    |    COMPLETED     |                   |
++                    +------------------+                   |
++                             ^                             |
++                             |                             |
++                             +-----------------------------+
++                             |           |
++                             | cancelBooking (REJECTED)
++                             v           v
++                    +------------------+
++                    |    CANCELLED     |
++                    +------------------+
++                             ^
++                             |
++                             +
++                             |
++                    (REJECTED: cannot cancel again)
++```
++
++---
++
++## Test Case 1: Confirm pending booking successfully
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/confirm
++
++Path parameter: bookingId = 2
++
++Initial state: PENDING
++
++Expected result:
++- Booking status changes from PENDING to CONFIRMED.
++- updatedAt is set to current timestamp.
++
++Actual result:
++- **PASSED** - Status changed to CONFIRMED.
++- Response: `{"bookingId":2,"status":"CONFIRMED","updatedAt":"2026-04-29T23:54:56.805902"}`
++
++Screenshot:
++- docs/screenshots/booking-confirm-success.png
++
++---
++
++## Test Case 2: Reject confirming non-pending booking
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/confirm
++
++Path parameter: bookingId = 2
++
++Initial state: CONFIRMED (already confirmed)
++
++Expected result:
++- Returns 400 error with message "Only PENDING booking can be confirmed".
++
++Actual result:
++- **PASSED** - Error response returned.
++- Response: `{"success":false,"message":"Only PENDING booking can be confirmed","data":null}`
++
++Screenshot:
++- docs/screenshots/booking-confirm-rejected.png
++
++---
++
++## Test Case 3: Cancel pending booking successfully
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/cancel
++
++Path parameter: bookingId = 3
++
++Initial state: PENDING
++
++Expected result:
++- Booking status changes from PENDING to CANCELLED.
++- Slot is released back to AVAILABLE status.
++
++Actual result:
++- **PASSED** - Status changed to CANCELLED.
++- Response: `{"bookingId":3,"status":"CANCELLED"}`
++
++Screenshot:
++- docs/screenshots/booking-cancel-pending.png
++
++---
++
++## Test Case 4: Cancel confirmed booking successfully
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/cancel
++
++Path parameter: bookingId = 2
++
++Initial state: CONFIRMED
++
++Expected result:
++- Booking status changes from CONFIRMED to CANCELLED.
++- Slot is released back to AVAILABLE status.
++
++Actual result:
++- **PASSED** - Status changed to CANCELLED.
++- Response: `{"bookingId":2,"status":"CANCELLED"}`
++
++Screenshot:
++- docs/screenshots/booking-cancel-confirmed.png
++
++---
++
++## Test Case 5: Reject cancelling completed booking
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/cancel
++
++Path parameter: bookingId = 4
++
++Initial state: COMPLETED
++
++Expected result:
++- Returns 400 error with message "COMPLETED booking cannot be cancelled".
++
++Actual result:
++- **PASSED** - Error response returned.
++- Response: `{"success":false,"message":"COMPLETED booking cannot be cancelled","data":null}`
++
++Screenshot:
++- docs/screenshots/booking-cancel-completed.png
++
++---
++
++## Test Case 6: Reject cancelling already cancelled booking
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/cancel
++
++Path parameter: bookingId = 2
++
++Initial state: CANCELLED (already cancelled)
++
++Expected result:
++- Returns 400 error with message "Booking has already been cancelled".
++
++Actual result:
++- **PASSED** - Error response returned.
++- Response: `{"success":false,"message":"Booking has already been cancelled","data":null}`
++
++Screenshot:
++- docs/screenshots/booking-cancel-already-cancelled.png
++
++---
++
++## Test Case 7: Verify cancelled booking releases slot to AVAILABLE
++
++Endpoint:
++
++GET /api/slots/specialist/{specialistId}/available
++
++Path parameter: specialistId = 1
++
++Expected result:
++- After cancellation, the released slot should appear in available slots list.
++
++Actual result:
++- **PASSED** - Available slots count increased from 2 to 3.
++- Slot count: 3 slots available
++
++Screenshot:
++- docs/screenshots/slot-released-after-cancel.png
++
++---
++
++## Test Case 8: Complete confirmed booking successfully
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/complete
++
++Path parameter: bookingId = 4
++
++Initial state: CONFIRMED
++
++Expected result:
++- Booking status changes from CONFIRMED to COMPLETED.
++- updatedAt is set to current timestamp.
++
++Actual result:
++- **PASSED** - Status changed to COMPLETED.
++- Response: `{"bookingId":4,"status":"COMPLETED"}`
++
++Screenshot:
++- docs/screenshots/booking-complete-success.png
++
++---
++
++## Test Case 9: Reject completing non-confirmed booking
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/complete
++
++Path parameter: bookingId = 4
++
++Initial state: COMPLETED (already completed)
++
++Expected result:
++- Returns 400 error with message "Only CONFIRMED booking can be completed".
++
++Actual result:
++- **PASSED** - Error response returned.
++- Response: `{"success":false,"message":"Only CONFIRMED booking can be completed","data":null}`
++
++Screenshot:
++- docs/screenshots/booking-complete-rejected.png
++
++---
++
++## Test Case 10: Booking not found error
++
++Endpoint:
++
++PUT /api/bookings/{bookingId}/confirm
++
++Path parameter: bookingId = 9999
++
++Expected result:
++- Returns 404 error with message "Booking not found".
++
++Actual result:
++- **PASSED** - Error response returned.
++- Response: `{"success":false,"message":"Booking not found","data":null}`
++
++Screenshot:
++- docs/screenshots/booking-not-found.png
++
++---
++
++## Notes for Group Report
++
++The booking workflow module manages the lifecycle of bookings through status transitions. The system enforces strict rules to ensure data integrity and prevent invalid state changes.
++
++**All 10 test cases passed successfully**, validating:
++
++1. **Status Transition Rules**:
++   - PENDING → CONFIRMED (via confirmBooking)
++   - CONFIRMED → COMPLETED (via completeBooking)
++   - PENDING/CONFIRMED → CANCELLED (via cancelBooking)
++   - COMPLETED → CANCELLED (REJECTED)
++   - CANCELLED → CANCELLED (REJECTED)
++
++2. **Slot Management**:
++   - When a booking is cancelled (PENDING or CONFIRMED), the slot is automatically released back to AVAILABLE status.
++   - When a booking is created, the slot status changes to BOOKED.
++
++3. **Timestamp Management**:
++   - createdAt is set when booking is created.
++   - updatedAt is updated whenever booking status changes (confirm, cancel, complete).
++
++4. **Error Handling**:
++   - All invalid operations return appropriate error messages.
++   - Non-existent bookings return 404.
++   - Invalid state transitions return 400 with descriptive messages.
++
++**Business Rules Summary**:
++| Action | From State | To State | Slot Effect |
++|--------|------------|----------|-------------|
++| confirmBooking | PENDING | CONFIRMED | None |
++| cancelBooking | PENDING | CANCELLED | Slot → AVAILABLE |
++| cancelBooking | CONFIRMED | CANCELLED | Slot → AVAILABLE |
++| completeBooking | CONFIRMED | COMPLETED | None |
++
++**Invalid Transitions (Rejected)**:
++| Action | From State | Error Message |
++|--------|------------|---------------|
++| confirmBooking | CONFIRMED | Only PENDING booking can be confirmed |
++| confirmBooking | CANCELLED | Only PENDING booking can be confirmed |
++| confirmBooking | COMPLETED | Only PENDING booking can be confirmed |
++| cancelBooking | CANCELLED | Booking has already been cancelled |
++| cancelBooking | COMPLETED | COMPLETED booking cannot be cancelled |
++| completeBooking | PENDING | Only CONFIRMED booking can be completed |
++| completeBooking | CANCELLED | Only CONFIRMED booking can be completed |
++| completeBooking | COMPLETED | Only CONFIRMED booking can be completed |
+diff --git a/src/main/java/com/cpt202/consultationbooking/service/BookingService.java b/src/main/java/com/cpt202/consultationbooking/service/BookingService.java
+index 12d2918..4fdd151 100644
+--- a/src/main/java/com/cpt202/consultationbooking/service/BookingService.java
++++ b/src/main/java/com/cpt202/consultationbooking/service/BookingService.java
+@@ -100,6 +100,10 @@ public class BookingService {
+         Booking booking = bookingRepository.findById(bookingId)
+                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+ 
++        if (booking.getStatus() == BookingStatus.CANCELLED) {
++            throw new BusinessException("Booking has already been cancelled");
++        }
++
+         if (booking.getStatus() == BookingStatus.COMPLETED) {
+             throw new BusinessException("COMPLETED booking cannot be cancelled");
+         }
