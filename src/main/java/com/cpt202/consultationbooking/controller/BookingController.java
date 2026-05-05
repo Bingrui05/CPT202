@@ -1,6 +1,7 @@
 package com.cpt202.consultationbooking.controller;
 
 import com.cpt202.consultationbooking.dto.request.CreateBookingRequest;
+import com.cpt202.consultationbooking.dto.request.RescheduleBookingRequest;
 import com.cpt202.consultationbooking.dto.response.ApiResponse;
 import com.cpt202.consultationbooking.dto.response.BookingResponse;
 import com.cpt202.consultationbooking.service.BookingService;
@@ -43,6 +44,14 @@ public class BookingController {
     public ResponseEntity<ApiResponse<BookingResponse>> completeBooking(@PathVariable Long bookingId) {
         BookingResponse response = bookingService.completeBooking(bookingId);
         return ResponseEntity.ok(ApiResponse.success("Booking completed successfully", response));
+    }
+
+    @PutMapping("/{bookingId}/reschedule")
+    public ResponseEntity<ApiResponse<BookingResponse>> rescheduleBooking(
+            @PathVariable Long bookingId,
+            @Valid @RequestBody RescheduleBookingRequest request) {
+        BookingResponse response = bookingService.rescheduleBooking(bookingId, request);
+        return ResponseEntity.ok(ApiResponse.success("Booking rescheduled successfully", response));
     }
 
     @GetMapping

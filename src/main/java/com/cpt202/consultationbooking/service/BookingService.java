@@ -1,6 +1,7 @@
 package com.cpt202.consultationbooking.service;
 
 import com.cpt202.consultationbooking.dto.request.CreateBookingRequest;
+import com.cpt202.consultationbooking.dto.request.RescheduleBookingRequest;
 import com.cpt202.consultationbooking.dto.response.BookingResponse;
 import com.cpt202.consultationbooking.entity.AvailabilitySlot;
 import com.cpt202.consultationbooking.entity.Booking;
@@ -128,6 +129,48 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.COMPLETED);
+        booking.setUpdatedAt(LocalDateTime.now());
+        Booking saved = bookingRepository.save(booking);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public BookingResponse rescheduleBooking(Long bookingId, RescheduleBookingRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new BusinessException("COMPLETED booking cannot be rescheduled");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BusinessException("CANCELLED booking cannot be rescheduled");
+        }
+
+        AvailabilitySlot newSlot = slotRepository.findById(request.getNewSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        if (!newSlot.getSpecialist().getSpecialistId().equals(booking.getSpecialist().getSpecialistId())) {
+            throw new BusinessException("New slot does not belong to the same specialist as the original booking");
+        }
+
+        if (newSlot.getStatus() != SlotStatus.AVAILABLE) {
+            throw new BusinessException("New slot is not available");
+        }
+
+        if (bookingRepository.existsBySlot_SlotId(newSlot.getSlotId())) {
+            throw new BusinessException("New slot has already been booked by another booking");
+        }
+
+        AvailabilitySlot oldSlot = booking.getSlot();
+        oldSlot.setStatus(SlotStatus.AVAILABLE);
+        slotRepository.save(oldSlot);
+
+        newSlot.setStatus(SlotStatus.BOOKED);
+        slotRepository.save(newSlot);
+
+        booking.setSlot(newSlot);
+        booking.setStatus(BookingStatus.PENDING);
         booking.setUpdatedAt(LocalDateTime.now());
         Booking saved = bookingRepository.save(booking);
         return toResponse(saved);
