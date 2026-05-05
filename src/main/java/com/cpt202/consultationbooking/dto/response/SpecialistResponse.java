@@ -9,7 +9,9 @@ public class SpecialistResponse {
     private Long userId;
     private String username;
     private String email;
+    private Long categoryId;
     private String categoryName;
+    private Long levelId;
     private String levelName;
     private SpecialistStatus status;
     private BigDecimal fee;
@@ -18,13 +20,15 @@ public class SpecialistResponse {
     public SpecialistResponse() {}
 
     public SpecialistResponse(Long specialistId, Long userId, String username, String email,
-                            String categoryName, String levelName, SpecialistStatus status,
-                            BigDecimal fee, String information) {
+                            Long categoryId, String categoryName, Long levelId, String levelName,
+                            SpecialistStatus status, BigDecimal fee, String information) {
         this.specialistId = specialistId;
         this.userId = userId;
         this.username = username;
         this.email = email;
+        this.categoryId = categoryId;
         this.categoryName = categoryName;
+        this.levelId = levelId;
         this.levelName = levelName;
         this.status = status;
         this.fee = fee;
@@ -39,8 +43,12 @@ public class SpecialistResponse {
     public void setUsername(String username) { this.username = username; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+    public Long getLevelId() { return levelId; }
+    public void setLevelId(Long levelId) { this.levelId = levelId; }
     public String getLevelName() { return levelName; }
     public void setLevelName(String levelName) { this.levelName = levelName; }
     public SpecialistStatus getStatus() { return status; }
@@ -59,7 +67,9 @@ public class SpecialistResponse {
         private Long userId;
         private String username;
         private String email;
+        private Long categoryId;
         private String categoryName;
+        private Long levelId;
         private String levelName;
         private SpecialistStatus status;
         private BigDecimal fee;
@@ -69,13 +79,16 @@ public class SpecialistResponse {
         public SpecialistResponseBuilder userId(Long userId) { this.userId = userId; return this; }
         public SpecialistResponseBuilder username(String username) { this.username = username; return this; }
         public SpecialistResponseBuilder email(String email) { this.email = email; return this; }
+        public SpecialistResponseBuilder categoryId(Long categoryId) { this.categoryId = categoryId; return this; }
         public SpecialistResponseBuilder categoryName(String categoryName) { this.categoryName = categoryName; return this; }
+        public SpecialistResponseBuilder levelId(Long levelId) { this.levelId = levelId; return this; }
         public SpecialistResponseBuilder levelName(String levelName) { this.levelName = levelName; return this; }
         public SpecialistResponseBuilder status(SpecialistStatus status) { this.status = status; return this; }
         public SpecialistResponseBuilder fee(BigDecimal fee) { this.fee = fee; return this; }
         public SpecialistResponseBuilder information(String information) { this.information = information; return this; }
         public SpecialistResponse build() {
-            return new SpecialistResponse(specialistId, userId, username, email, categoryName, levelName, status, fee, information);
+            return new SpecialistResponse(specialistId, userId, username, email, categoryId, categoryName,
+                    levelId, levelName, status, fee, information);
         }
     }
 }

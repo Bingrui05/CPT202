@@ -57,7 +57,7 @@ public class SpecialistService {
                 .user(user)
                 .category(category)
                 .level(level)
-                .status(SpecialistStatus.ACTIVE)
+                .status(request.getStatus())
                 .fee(request.getFee())
                 .information(request.getInformation())
                 .build();
@@ -80,6 +80,16 @@ public class SpecialistService {
                     categoryId, levelId, SpecialistStatus.valueOf(status.toUpperCase()));
         } else if (categoryId != null && levelId != null) {
             specialists = specialistRepository.findByCategory_CategoryIdAndLevel_LevelId(categoryId, levelId);
+        } else if (categoryId != null && status != null) {
+            specialists = specialistRepository.findByCategory_CategoryIdAndStatus(
+                    categoryId, SpecialistStatus.valueOf(status.toUpperCase()));
+        } else if (levelId != null && status != null) {
+            specialists = specialistRepository.findByLevel_LevelIdAndStatus(
+                    levelId, SpecialistStatus.valueOf(status.toUpperCase()));
+        } else if (categoryId != null) {
+            specialists = specialistRepository.findByCategory_CategoryId(categoryId);
+        } else if (levelId != null) {
+            specialists = specialistRepository.findByLevel_LevelId(levelId);
         } else if (status != null) {
             specialists = specialistRepository.findByStatus(SpecialistStatus.valueOf(status.toUpperCase()));
         } else {
@@ -103,7 +113,9 @@ public class SpecialistService {
                 .userId(specialist.getUser().getUserId())
                 .username(specialist.getUser().getUsername())
                 .email(specialist.getUser().getEmail())
+                .categoryId(specialist.getCategory().getCategoryId())
                 .categoryName(specialist.getCategory().getName())
+                .levelId(specialist.getLevel().getLevelId())
                 .levelName(specialist.getLevel().getName())
                 .status(specialist.getStatus())
                 .fee(specialist.getFee())
