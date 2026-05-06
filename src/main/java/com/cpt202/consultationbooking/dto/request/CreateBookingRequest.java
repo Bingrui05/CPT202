@@ -1,7 +1,7 @@
 package com.cpt202.consultationbooking.dto.request;
 
 import jakarta.validation.constraints.NotNull;
-import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class CreateBookingRequest {
 
@@ -14,6 +14,9 @@ public class CreateBookingRequest {
     @NotNull(message = "Slot ID is required")
     private Long slotId;
 
+    @NotNull(message = "Appointment date is required")
+    private LocalDate appointmentDate;
+
     @NotNull(message = "Topic is required")
     private String topic;
 
@@ -21,10 +24,11 @@ public class CreateBookingRequest {
 
     public CreateBookingRequest() {}
 
-    public CreateBookingRequest(Long customerId, Long specialistId, Long slotId, String topic, String notes) {
+    public CreateBookingRequest(Long customerId, Long specialistId, Long slotId, LocalDate appointmentDate, String topic, String notes) {
         this.customerId = customerId;
         this.specialistId = specialistId;
         this.slotId = slotId;
+        this.appointmentDate = appointmentDate;
         this.topic = topic;
         this.notes = notes;
     }
@@ -35,6 +39,8 @@ public class CreateBookingRequest {
     public void setSpecialistId(Long specialistId) { this.specialistId = specialistId; }
     public Long getSlotId() { return slotId; }
     public void setSlotId(Long slotId) { this.slotId = slotId; }
+    public LocalDate getAppointmentDate() { return appointmentDate; }
+    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
     public String getTopic() { return topic; }
     public void setTopic(String topic) { this.topic = topic; }
     public String getNotes() { return notes; }

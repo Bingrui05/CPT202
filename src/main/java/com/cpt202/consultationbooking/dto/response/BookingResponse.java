@@ -14,8 +14,7 @@ public class BookingResponse {
     private Long specialistId;
     private String specialistName;
     private Long slotId;
-    private LocalDateTime slotDateTime;
-    private LocalDate slotDate;
+    private LocalDate appointmentDate;
     private LocalTime slotStartTime;
     private LocalTime slotEndTime;
     private String topic;
@@ -28,9 +27,9 @@ public class BookingResponse {
     public BookingResponse() {}
 
     public BookingResponse(Long bookingId, Long customerId, String customerName, Long specialistId,
-                          String specialistName, Long slotId, LocalDateTime slotDateTime,
-                          LocalDate slotDate, LocalTime slotStartTime, LocalTime slotEndTime,
-                          String topic, String notes, BookingStatus status, BigDecimal price,
+                          String specialistName, Long slotId, LocalDate appointmentDate,
+                          LocalTime slotStartTime, LocalTime slotEndTime, String topic,
+                          String notes, BookingStatus status, BigDecimal price,
                           LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.bookingId = bookingId;
         this.customerId = customerId;
@@ -38,8 +37,7 @@ public class BookingResponse {
         this.specialistId = specialistId;
         this.specialistName = specialistName;
         this.slotId = slotId;
-        this.slotDateTime = slotDateTime;
-        this.slotDate = slotDate;
+        this.appointmentDate = appointmentDate;
         this.slotStartTime = slotStartTime;
         this.slotEndTime = slotEndTime;
         this.topic = topic;
@@ -62,10 +60,8 @@ public class BookingResponse {
     public void setSpecialistName(String specialistName) { this.specialistName = specialistName; }
     public Long getSlotId() { return slotId; }
     public void setSlotId(Long slotId) { this.slotId = slotId; }
-    public LocalDateTime getSlotDateTime() { return slotDateTime; }
-    public void setSlotDateTime(LocalDateTime slotDateTime) { this.slotDateTime = slotDateTime; }
-    public LocalDate getSlotDate() { return slotDate; }
-    public void setSlotDate(LocalDate slotDate) { this.slotDate = slotDate; }
+    public LocalDate getAppointmentDate() { return appointmentDate; }
+    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
     public LocalTime getSlotStartTime() { return slotStartTime; }
     public void setSlotStartTime(LocalTime slotStartTime) { this.slotStartTime = slotStartTime; }
     public LocalTime getSlotEndTime() { return slotEndTime; }
@@ -94,8 +90,7 @@ public class BookingResponse {
         private Long specialistId;
         private String specialistName;
         private Long slotId;
-        private LocalDateTime slotDateTime;
-        private LocalDate slotDate;
+        private LocalDate appointmentDate;
         private LocalTime slotStartTime;
         private LocalTime slotEndTime;
         private String topic;
@@ -111,8 +106,7 @@ public class BookingResponse {
         public BookingResponseBuilder specialistId(Long specialistId) { this.specialistId = specialistId; return this; }
         public BookingResponseBuilder specialistName(String specialistName) { this.specialistName = specialistName; return this; }
         public BookingResponseBuilder slotId(Long slotId) { this.slotId = slotId; return this; }
-        public BookingResponseBuilder slotDateTime(LocalDateTime slotDateTime) { this.slotDateTime = slotDateTime; return this; }
-        public BookingResponseBuilder slotDate(LocalDate slotDate) { this.slotDate = slotDate; return this; }
+        public BookingResponseBuilder appointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; return this; }
         public BookingResponseBuilder slotStartTime(LocalTime slotStartTime) { this.slotStartTime = slotStartTime; return this; }
         public BookingResponseBuilder slotEndTime(LocalTime slotEndTime) { this.slotEndTime = slotEndTime; return this; }
         public BookingResponseBuilder topic(String topic) { this.topic = topic; return this; }
@@ -123,8 +117,7 @@ public class BookingResponse {
         public BookingResponseBuilder updatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
         public BookingResponse build() {
             return new BookingResponse(bookingId, customerId, customerName, specialistId, specialistName,
-                    slotId, slotDateTime, slotDate, slotStartTime, slotEndTime,
-                    topic, notes, status, price, createdAt, updatedAt);
+                    slotId, appointmentDate, slotStartTime, slotEndTime, topic, notes, status, price, createdAt, updatedAt);
         }
     }
 }

@@ -2,8 +2,10 @@ package com.cpt202.consultationbooking.service;
 
 import com.cpt202.consultationbooking.dto.request.CreateSlotRequest;
 import com.cpt202.consultationbooking.dto.request.UpdateSlotRequest;
+import com.cpt202.consultationbooking.dto.response.AvailableSlotResponse;
 import com.cpt202.consultationbooking.dto.response.SlotResponse;
 import com.cpt202.consultationbooking.entity.AvailabilitySlot;
+import com.cpt202.consultationbooking.entity.Booking;
 import com.cpt202.consultationbooking.entity.Specialist;
 import com.cpt202.consultationbooking.enums.BookingStatus;
 import com.cpt202.consultationbooking.enums.SlotStatus;
@@ -15,19 +17,22 @@ import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class AvailabilitySlotService {
 
-    private static final List<BookingStatus> ACTIVE_BOOKING_STATUSES = Arrays.asList(
-            BookingStatus.PENDING, 
-            BookingStatus.CONFIRMED
-    );
+    private static final List<BookingStatus> BLOCKING_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED);
+    private static final int UPCOMING_DAYS = 14;
 
     private final AvailabilitySlotRepository slotRepository;
     private final SpecialistRepository specialistRepository;
@@ -46,29 +51,21 @@ public class AvailabilitySlotService {
         Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
 
-        // Check if specialist is active
         if (!specialist.isActive()) {
             throw new BusinessException("Specialist is not active");
         }
 
         validateTimeRange(request.getStartTime(), request.getEndTime());
 
-        // Check for overlapping slots
-        List<AvailabilitySlot> overlapping = slotRepository.findOverlappingSlotsForCreate(
-                specialist.getSpecialistId(), 
-                request.getDate(), 
-                request.getStartTime(), 
-                request.getEndTime());
-        
-        if (!overlapping.isEmpty()) {
-            throw new BusinessException("Slot time overlaps with an existing slot for this specialist");
+        if (hasOverlappingSlot(specialist.getSpecialistId(), request.getDayOfWeek(), request.getStartTime(), request.getEndTime(), null)) {
+            throw new BusinessException("This specialist already has an overlapping slot on " + request.getDayOfWeek());
         }
 
         SlotStatus status = request.getStatus() != null ? request.getStatus() : SlotStatus.AVAILABLE;
 
         AvailabilitySlot slot = AvailabilitySlot.builder()
                 .specialist(specialist)
-                .date(request.getDate())
+                .dayOfWeek(request.getDayOfWeek())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .status(status)
@@ -89,38 +86,23 @@ public class AvailabilitySlotService {
         AvailabilitySlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
-        if (slot.getStatus() == SlotStatus.BOOKED) {
-            if (request.getDate() != null || request.getStartTime() != null || request.getEndTime() != null) {
-                throw new BusinessException("Cannot modify date or time for a booked slot");
-            }
-        }
-
         if (request.getSpecialistId() != null) {
             Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                     .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
             slot.setSpecialist(specialist);
         }
 
-        LocalDate date = request.getDate() != null ? request.getDate() : slot.getDate();
+        if (request.getDayOfWeek() != null) {
+            slot.setDayOfWeek(request.getDayOfWeek());
+        }
         LocalTime startTime = request.getStartTime() != null ? request.getStartTime() : slot.getStartTime();
         LocalTime endTime = request.getEndTime() != null ? request.getEndTime() : slot.getEndTime();
 
-        if (request.getStartTime() != null || request.getEndTime() != null || request.getDate() != null) {
+        if (request.getStartTime() != null || request.getEndTime() != null || request.getDayOfWeek() != null) {
             validateTimeRange(startTime, endTime);
-            
-            // Check for overlapping slots (excluding current slot)
-            List<AvailabilitySlot> overlapping = slotRepository.findOverlappingSlots(
-                    slot.getSpecialist().getSpecialistId(),
-                    date,
-                    startTime,
-                    endTime,
-                    slotId);
-            
-            if (!overlapping.isEmpty()) {
-                throw new BusinessException("Slot time overlaps with an existing slot for this specialist");
+            if (hasOverlappingSlot(slot.getSpecialist().getSpecialistId(), slot.getDayOfWeek(), startTime, endTime, slotId)) {
+                throw new BusinessException("This specialist already has an overlapping slot on " + slot.getDayOfWeek());
             }
-            
-            slot.setDate(date);
             slot.setStartTime(startTime);
             slot.setEndTime(endTime);
         }
@@ -138,29 +120,65 @@ public class AvailabilitySlotService {
         AvailabilitySlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
-        // Cannot delete a booked slot
-        if (slot.getStatus() == SlotStatus.BOOKED) {
-            throw new BusinessException("Booked slot cannot be deactivated");
-        }
-
-        // Check if slot has active bookings
-        boolean hasActiveBookings = bookingRepository.existsBySlot_SlotIdAndStatusIn(
-                slotId, ACTIVE_BOOKING_STATUSES);
-
-        if (hasActiveBookings) {
-            throw new BusinessException("Slot is occupied by an active booking and cannot be deactivated");
-        }
-
         slot.setStatus(SlotStatus.UNAVAILABLE);
         slotRepository.save(slot);
     }
 
-    public List<SlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
-        return slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE)
-                .stream()
-                .filter(slot -> !bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_BOOKING_STATUSES))
-                .map(this::toResponse)
+    public List<AvailableSlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
+        LocalDate today = LocalDate.now();
+        LocalDate endDate = today.plusDays(UPCOMING_DAYS);
+
+        List<AvailabilitySlot> weeklySlots = slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE);
+
+        List<AvailableSlotResponse> slots = new ArrayList<>();
+
+        for (AvailabilitySlot slot : weeklySlots) {
+            LocalDate nextDate = today.with(TemporalAdjusters.nextOrSame(slot.getDayOfWeek()));
+            while (!nextDate.isAfter(endDate)) {
+                String occurrenceStatus = determineOccurrenceStatus(slot.getSlotId(), nextDate);
+                boolean bookable = "AVAILABLE".equals(occurrenceStatus);
+                Long bookingId = bookable ? null : findBookingIdForOccurrence(slot.getSlotId(), nextDate);
+
+                String displayLabel = nextDate + " " + formatTime(slot.getStartTime()) + " - " + formatTime(slot.getEndTime());
+                slots.add(AvailableSlotResponse.builder()
+                        .slotId(slot.getSlotId())
+                        .specialistId(specialistId)
+                        .specialistName(slot.getSpecialist().getUser().getUsername())
+                        .appointmentDate(nextDate)
+                        .dayOfWeek(slot.getDayOfWeek())
+                        .startTime(slot.getStartTime())
+                        .endTime(slot.getEndTime())
+                        .status(SlotStatus.AVAILABLE)
+                        .displayLabel(displayLabel)
+                        .occurrenceStatus(occurrenceStatus)
+                        .bookingId(bookingId)
+                        .bookable(bookable)
+                        .build());
+                nextDate = nextDate.plusWeeks(1);
+            }
+        }
+
+        return slots.stream()
+                .filter(s -> !s.getAppointmentDate().isBefore(today))
+                .sorted((a, b) -> {
+                    int dateCompare = a.getAppointmentDate().compareTo(b.getAppointmentDate());
+                    if (dateCompare != 0) return dateCompare;
+                    return a.getStartTime().compareTo(b.getStartTime());
+                })
                 .collect(Collectors.toList());
+    }
+
+    private String determineOccurrenceStatus(Long slotId, LocalDate appointmentDate) {
+        Optional<Booking> booking = bookingRepository.findBySlot_SlotIdAndAppointmentDateAndStatusIn(
+                slotId, appointmentDate, BLOCKING_STATUSES);
+        return booking.map(b -> b.getStatus().name()).orElse("AVAILABLE");
+    }
+
+    private Long findBookingIdForOccurrence(Long slotId, LocalDate appointmentDate) {
+        return bookingRepository.findBySlot_SlotIdAndAppointmentDateAndStatusIn(
+                slotId, appointmentDate, BLOCKING_STATUSES)
+                .map(Booking::getBookingId)
+                .orElse(null);
     }
 
     public List<SlotResponse> getSlotsBySpecialist(Long specialistId) {
@@ -170,10 +188,33 @@ public class AvailabilitySlotService {
                 .collect(Collectors.toList());
     }
 
+    private boolean hasOverlappingSlot(Long specialistId, DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime, Long excludeSlotId) {
+        List<AvailabilitySlot> existingSlots = slotRepository.findBySpecialist_SpecialistIdAndDayOfWeek(specialistId, dayOfWeek);
+        
+        for (AvailabilitySlot existing : existingSlots) {
+            if (excludeSlotId != null && existing.getSlotId().equals(excludeSlotId)) {
+                continue;
+            }
+            if (timesOverlap(existing.getStartTime(), existing.getEndTime(), startTime, endTime)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean timesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
+        return start1.isBefore(end2) && start2.isBefore(end1);
+    }
+
     private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
         if (startTime != null && endTime != null && !startTime.isBefore(endTime)) {
             throw new BusinessException("Start time must be before end time");
         }
+    }
+
+    private String formatTime(LocalTime time) {
+        if (time == null) return "";
+        return time.toString();
     }
 
     private SlotResponse toResponse(AvailabilitySlot slot) {
@@ -181,7 +222,7 @@ public class AvailabilitySlotService {
                 .slotId(slot.getSlotId())
                 .specialistId(slot.getSpecialist().getSpecialistId())
                 .specialistName(slot.getSpecialist().getUser().getUsername())
-                .date(slot.getDate())
+                .dayOfWeek(slot.getDayOfWeek())
                 .startTime(slot.getStartTime())
                 .endTime(slot.getEndTime())
                 .status(slot.getStatus())

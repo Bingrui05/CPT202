@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Component
@@ -266,15 +266,14 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // ============================================================
-        // AVAILABILITY SLOTS
+        // AVAILABILITY SLOTS (Weekly Recurring)
         // ============================================================
 
-        LocalDate today = LocalDate.now();
-
         // Specialist 1 slots (Software Engineering)
+        // MONDAY 09:00-10:00, 10:00-11:00; TUESDAY 14:00-15:00; WEDNESDAY 09:00-10:00; FRIDAY 13:00-14:00
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist1)
-                .date(today.plusDays(1))
+                .dayOfWeek(DayOfWeek.MONDAY)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -282,7 +281,7 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist1)
-                .date(today.plusDays(1))
+                .dayOfWeek(DayOfWeek.MONDAY)
                 .startTime(LocalTime.of(10, 0))
                 .endTime(LocalTime.of(11, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -290,7 +289,7 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist1)
-                .date(today.plusDays(2))
+                .dayOfWeek(DayOfWeek.TUESDAY)
                 .startTime(LocalTime.of(14, 0))
                 .endTime(LocalTime.of(15, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -298,16 +297,25 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist1)
-                .date(today.plusDays(3))
-                .startTime(LocalTime.of(16, 0))
-                .endTime(LocalTime.of(17, 0))
+                .dayOfWeek(DayOfWeek.WEDNESDAY)
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(10, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist1)
+                .dayOfWeek(DayOfWeek.FRIDAY)
+                .startTime(LocalTime.of(13, 0))
+                .endTime(LocalTime.of(14, 0))
                 .status(SlotStatus.AVAILABLE)
                 .build());
 
         // Specialist 2 slots (Data Science)
+        // MONDAY 11:00-12:00; TUESDAY 09:00-10:00; WEDNESDAY 15:00-16:00; THURSDAY 14:00-15:00; FRIDAY 10:00-11:00
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist2)
-                .date(today.plusDays(1))
+                .dayOfWeek(DayOfWeek.MONDAY)
                 .startTime(LocalTime.of(11, 0))
                 .endTime(LocalTime.of(12, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -315,7 +323,7 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist2)
-                .date(today.plusDays(2))
+                .dayOfWeek(DayOfWeek.TUESDAY)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -323,66 +331,82 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist2)
-                .date(today.plusDays(4))
-                .startTime(LocalTime.of(13, 0))
-                .endTime(LocalTime.of(14, 0))
-                .status(SlotStatus.AVAILABLE)
-                .build());
-
-        // Specialist 3 slots (Career Consulting)
-        slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist3)
-                .date(today.plusDays(1))
-                .startTime(LocalTime.of(13, 0))
-                .endTime(LocalTime.of(14, 0))
-                .status(SlotStatus.AVAILABLE)
-                .build());
-
-        slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist3)
-                .date(today.plusDays(2))
-                .startTime(LocalTime.of(10, 0))
-                .endTime(LocalTime.of(11, 0))
-                .status(SlotStatus.AVAILABLE)
-                .build());
-
-        slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist3)
-                .date(today.plusDays(5))
-                .startTime(LocalTime.of(15, 0))
-                .endTime(LocalTime.of(16, 0))
-                .status(SlotStatus.AVAILABLE)
-                .build());
-
-        // Specialist 4 slots (Finance Consulting)
-        slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist4)
-                .date(today.plusDays(1))
+                .dayOfWeek(DayOfWeek.WEDNESDAY)
                 .startTime(LocalTime.of(15, 0))
                 .endTime(LocalTime.of(16, 0))
                 .status(SlotStatus.AVAILABLE)
                 .build());
 
         slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist4)
-                .date(today.plusDays(3))
-                .startTime(LocalTime.of(10, 0))
-                .endTime(LocalTime.of(11, 0))
-                .status(SlotStatus.AVAILABLE)
-                .build());
-
-        slotRepository.save(AvailabilitySlot.builder()
-                .specialist(specialist4)
-                .date(today.plusDays(4))
+                .specialist(specialist2)
+                .dayOfWeek(DayOfWeek.THURSDAY)
                 .startTime(LocalTime.of(14, 0))
                 .endTime(LocalTime.of(15, 0))
                 .status(SlotStatus.AVAILABLE)
                 .build());
 
-        // Specialist 5 slots (Academic Planning)
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist2)
+                .dayOfWeek(DayOfWeek.FRIDAY)
+                .startTime(LocalTime.of(10, 0))
+                .endTime(LocalTime.of(11, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 3 slots (Career Consulting) - Monday, Wednesday, Friday
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .dayOfWeek(DayOfWeek.MONDAY)
+                .startTime(LocalTime.of(13, 0))
+                .endTime(LocalTime.of(14, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .dayOfWeek(DayOfWeek.WEDNESDAY)
+                .startTime(LocalTime.of(10, 0))
+                .endTime(LocalTime.of(11, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .dayOfWeek(DayOfWeek.FRIDAY)
+                .startTime(LocalTime.of(15, 0))
+                .endTime(LocalTime.of(16, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 4 slots (Finance Consulting) - Tuesday and Thursday
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .dayOfWeek(DayOfWeek.TUESDAY)
+                .startTime(LocalTime.of(15, 0))
+                .endTime(LocalTime.of(16, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .dayOfWeek(DayOfWeek.THURSDAY)
+                .startTime(LocalTime.of(10, 0))
+                .endTime(LocalTime.of(11, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .dayOfWeek(DayOfWeek.FRIDAY)
+                .startTime(LocalTime.of(14, 0))
+                .endTime(LocalTime.of(15, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 5 slots (Academic Planning) - Wednesday, Thursday, Friday
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist5)
-                .date(today.plusDays(2))
+                .dayOfWeek(DayOfWeek.WEDNESDAY)
                 .startTime(LocalTime.of(11, 0))
                 .endTime(LocalTime.of(12, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -390,7 +414,7 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist5)
-                .date(today.plusDays(3))
+                .dayOfWeek(DayOfWeek.THURSDAY)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
                 .status(SlotStatus.AVAILABLE)
@@ -398,7 +422,7 @@ public class DataInitializer implements CommandLineRunner {
 
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist5)
-                .date(today.plusDays(5))
+                .dayOfWeek(DayOfWeek.FRIDAY)
                 .startTime(LocalTime.of(14, 0))
                 .endTime(LocalTime.of(15, 0))
                 .status(SlotStatus.AVAILABLE)

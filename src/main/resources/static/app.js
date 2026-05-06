@@ -22,58 +22,141 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
-// DOM elements
-const demoSection = document.getElementById('demo-section');
-const userPanel = document.getElementById('user-panel');
-const customerSection = document.getElementById('customer-section');
-const specialistSection = document.getElementById('specialist-section');
-const managerSection = document.getElementById('manager-section');
+// Initialize app when DOM is ready
+function initializeApp() {
+    // DOM elements
+    const demoSection = document.getElementById('demo-section');
+    const userPanel = document.getElementById('user-panel');
+    const customerSection = document.getElementById('customer-section');
+    const specialistSection = document.getElementById('specialist-section');
+    const managerSection = document.getElementById('manager-section');
+    
+    // Login form handler
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    // Register form handler
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+    
+    // Booking form handler
+    const bookingForm = document.getElementById('booking-form');
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', handleCreateBooking);
+    }
+    
+    // Category form handlers
+    const createCategoryForm = document.getElementById('create-category-form');
+    if (createCategoryForm) {
+        createCategoryForm.addEventListener('submit', handleCreateCategory);
+    }
+    
+    const updateCategoryForm = document.getElementById('update-category-form');
+    if (updateCategoryForm) {
+        updateCategoryForm.addEventListener('submit', handleUpdateCategory);
+    }
+    
+    // Specialist form handlers
+    const createSpecialistForm = document.getElementById('create-specialist-form');
+    if (createSpecialistForm) {
+        createSpecialistForm.addEventListener('submit', handleCreateSpecialist);
+    }
+    
+    const updateSpecialistForm = document.getElementById('update-specialist-form');
+    if (updateSpecialistForm) {
+        updateSpecialistForm.addEventListener('submit', handleUpdateSpecialist);
+    }
+    
+    // Slot form handlers
+    const createSlotForm = document.getElementById('create-slot-form');
+    if (createSlotForm) {
+        createSlotForm.addEventListener('submit', handleCreateSlot);
+    }
+    
+    const updateSlotForm = document.getElementById('update-slot-form');
+    if (updateSlotForm) {
+        updateSlotForm.addEventListener('submit', handleUpdateSlot);
+    }
+    
+    // Demo login buttons
+    const demoCustomerBtn = document.getElementById('demoCustomerBtn');
+    if (demoCustomerBtn) {
+        demoCustomerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            demoLogin('CUSTOMER');
+        });
+    }
+    
+    const demoSpecialistBtn = document.getElementById('demoSpecialistBtn');
+    if (demoSpecialistBtn) {
+        demoSpecialistBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            demoLogin('SPECIALIST');
+        });
+    }
+    
+    const demoManagerBtn = document.getElementById('demoManagerBtn');
+    if (demoManagerBtn) {
+        demoManagerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            demoLogin('MANAGER');
+        });
+    }
+    
+    // Initialize section visibility
+    showSection();
+}
 
-// Form handlers
-document.getElementById('login-form').addEventListener('submit', handleLogin);
-document.getElementById('register-form').addEventListener('submit', handleRegister);
-document.getElementById('booking-form').addEventListener('submit', handleCreateBooking);
-document.getElementById('create-category-form').addEventListener('submit', handleCreateCategory);
-document.getElementById('update-category-form').addEventListener('submit', handleUpdateCategory);
-document.getElementById('create-specialist-form').addEventListener('submit', handleCreateSpecialist);
-document.getElementById('update-specialist-form').addEventListener('submit', handleUpdateSpecialist);
-document.getElementById('create-slot-form').addEventListener('submit', handleCreateSlot);
-document.getElementById('update-slot-form').addEventListener('submit', handleUpdateSlot);
-
-// Initialize
-showSection();
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
 
 // Helper: Show appropriate section based on login state
 function showSection() {
+    const demoSection = document.getElementById('demo-section');
+    const userPanel = document.getElementById('user-panel');
+    const customerSection = document.getElementById('customer-section');
+    const specialistSection = document.getElementById('specialist-section');
+    const managerSection = document.getElementById('manager-section');
+    
     if (currentUser) {
-        demoSection.classList.add('hidden');
-        userPanel.classList.remove('hidden');
+        if (demoSection) demoSection.classList.add('hidden');
+        if (userPanel) userPanel.classList.remove('hidden');
         updateUserInfo();
         
-        customerSection.classList.add('hidden');
-        specialistSection.classList.add('hidden');
-        managerSection.classList.add('hidden');
+        if (customerSection) customerSection.classList.add('hidden');
+        if (specialistSection) specialistSection.classList.add('hidden');
+        if (managerSection) managerSection.classList.add('hidden');
         
         if (currentUser.role === 'CUSTOMER') {
-            customerSection.classList.remove('hidden');
+            if (customerSection) customerSection.classList.remove('hidden');
             updateCustomerWarning();
             initializeCustomerDashboard();
         } else if (currentUser.role === 'SPECIALIST') {
-            specialistSection.classList.remove('hidden');
+            if (specialistSection) specialistSection.classList.remove('hidden');
             checkSpecialistProfile();
             loadMySchedule();
         } else if (currentUser.role === 'MANAGER') {
-            managerSection.classList.remove('hidden');
+            if (managerSection) managerSection.classList.remove('hidden');
             showManagerTab('bookings');
             loadAllBookings();
         }
     } else {
-        demoSection.classList.remove('hidden');
-        resetDemoAccessSection();
-        userPanel.classList.add('hidden');
-        customerSection.classList.add('hidden');
-        specialistSection.classList.add('hidden');
-        managerSection.classList.add('hidden');
+        if (demoSection) {
+            demoSection.classList.remove('hidden');
+            resetDemoAccessSection();
+        }
+        if (userPanel) userPanel.classList.add('hidden');
+        if (customerSection) customerSection.classList.add('hidden');
+        if (specialistSection) specialistSection.classList.add('hidden');
+        if (managerSection) managerSection.classList.add('hidden');
     }
 }
 
@@ -235,35 +318,50 @@ function clearAllSelections() {
     setDebugSlot(null);
     setDebugBooking(null);
     
-    // Clear specialist selection UI
-    document.getElementById('selected-specialist-section').classList.add('hidden');
-    document.getElementById('selected-slot-section').classList.add('hidden');
-    document.getElementById('specialists-list').innerHTML = '';
-    document.getElementById('available-slots-list').innerHTML = '';
-    document.getElementById('booking-result').innerHTML = '';
+    // Clear specialist selection UI (null-safe)
+    const el = document.getElementById('selected-specialist-section');
+    if (el) el.classList.add('hidden');
+    const el2 = document.getElementById('selected-slot-section');
+    if (el2) el2.classList.add('hidden');
+    const el3 = document.getElementById('specialists-list');
+    if (el3) el3.innerHTML = '';
+    const el4 = document.getElementById('available-slots-list');
+    if (el4) el4.innerHTML = '';
+    const el5 = document.getElementById('booking-result');
+    if (el5) el5.innerHTML = '';
     
     // Clear customer bookings
-    document.getElementById('my-bookings-list').innerHTML = '';
+    const el6 = document.getElementById('my-bookings-list');
+    if (el6) el6.innerHTML = '';
     
     // Clear reschedule section
-    document.getElementById('reschedule-section').classList.add('hidden');
-    document.getElementById('reschedule-result').innerHTML = '';
+    const el7 = document.getElementById('reschedule-section');
+    if (el7) el7.classList.add('hidden');
+    const el8 = document.getElementById('reschedule-result');
+    if (el8) el8.innerHTML = '';
     
     // Clear specialist bookings
-    document.getElementById('specialist-bookings').innerHTML = '';
+    const el9 = document.getElementById('specialist-bookings');
+    if (el9) el9.innerHTML = '';
     
     // Clear manager tables
-    document.getElementById('all-bookings-list').innerHTML = '';
-    document.getElementById('categories-list').innerHTML = '';
-    document.getElementById('admin-specialists-list').innerHTML = '';
-    document.getElementById('slots-list').innerHTML = '';
-    document.getElementById('levels-list').innerHTML = '';
+    const el10 = document.getElementById('all-bookings-list');
+    if (el10) el10.innerHTML = '';
+    const el11 = document.getElementById('categories-list');
+    if (el11) el11.innerHTML = '';
+    const el12 = document.getElementById('admin-specialists-list');
+    if (el12) el12.innerHTML = '';
+    const el13 = document.getElementById('slots-list');
+    if (el13) el13.innerHTML = '';
+    const el14 = document.getElementById('levels-list');
+    if (el14) el14.innerHTML = '';
     
     // Clear messages
-    document.getElementById('messages').innerHTML = '';
+    const el15 = document.getElementById('messages');
+    if (el15) el15.innerHTML = '';
 }
 
-// Demo login
+// Demo login - calls API directly
 async function demoLogin(role) {
     const creds = demoCredentials[role];
     if (!creds) {
@@ -271,18 +369,11 @@ async function demoLogin(role) {
         return;
     }
     
-    document.getElementById('login-username').value = creds.username;
-    document.getElementById('login-password').value = creds.password;
-    await handleLogin({ preventDefault: function() {} });
+    await loginWithCredentials(creds.username, creds.password);
 }
 
-// Login handler
-async function handleLogin(e) {
-    if (e) e.preventDefault();
-    
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-    
+// Login with credentials - shared function for both demo and manual login
+async function loginWithCredentials(username, password) {
     clearDebug();
     clearAllSelections();
     setDebugMethod('POST');
@@ -300,14 +391,21 @@ async function handleLogin(e) {
         setDebugResponse(data);
         
         if (response.ok && data.success) {
-            currentUser = data.data;
+            const user = data.data;
+            currentUser = {
+                userId: user.userId,
+                username: user.username,
+                role: user.role,
+                customerId: user.customerId,
+                specialistId: user.specialistId,
+                managerId: user.managerId
+            };
             setDebugUser(currentUser);
             showSection();
             showMessage('Login successful!');
             
-            // Check if customer profile is missing
             if (currentUser.role === 'CUSTOMER' && !currentUser.customerId) {
-                showError('This customer account does not have a linked Customer profile. Booking cannot be created.');
+                showError('This customer account does not have a linked Customer profile.');
             }
         } else {
             showError(extractErrorMessage(data, response));
@@ -317,6 +415,33 @@ async function handleLogin(e) {
         showError('Login error: ' + error.message);
     }
 }
+
+// Login handler - for form submission
+async function handleLogin(e) {
+    if (e) e.preventDefault();
+    
+    const username = document.getElementById('login-username')?.value || '';
+    const password = document.getElementById('login-password')?.value || '';
+    
+    await loginWithCredentials(username, password);
+}
+
+// Event delegation for demo login buttons
+document.addEventListener('click', function(event) {
+    const demoButton = event.target.closest('[data-demo-login]');
+    if (!demoButton) return;
+    
+    event.preventDefault();
+    
+    const role = demoButton.dataset.demoLogin;
+    const creds = demoCredentials[role];
+    if (!creds) {
+        console.error('Unknown demo login role:', role);
+        return;
+    }
+    
+    loginWithCredentials(creds.username, creds.password);
+});
 
 // Register handler
 async function handleRegister(e) {
@@ -627,40 +752,89 @@ async function loadAvailableSlots(specialistId) {
     }
 }
 
-// Display available slots
+// Display available slots in timetable format
 function displayAvailableSlots(slots) {
-    const list = document.getElementById('available-slots-list');
+    const timetable = document.getElementById('available-slots-timetable');
+    const today = new Date().toISOString().split('T')[0];
     
     if (!slots || slots.length === 0) {
-        list.innerHTML = '<div class="empty-state"><p>No available slots found.</p></div>';
+        timetable.innerHTML = '<div class="empty-state"><p>No available slots found.</p></div>';
         return;
     }
     
     // Group slots by date
     const slotsByDate = {};
     slots.forEach(function(slot) {
-        const date = slot.date;
+        const date = slot.appointmentDate;
         if (!slotsByDate[date]) {
             slotsByDate[date] = [];
         }
         slotsByDate[date].push(slot);
     });
     
+    // Sort dates
+    const sortedDates = Object.keys(slotsByDate).sort();
+    
+    // Limit to next 14 days
+    const upcomingDates = sortedDates.slice(0, 14);
+    
+    if (upcomingDates.length === 0) {
+        timetable.innerHTML = '<div class="empty-state"><p>No upcoming slots available.</p></div>';
+        return;
+    }
+    
+    // Build timetable HTML
     let html = '';
-    Object.keys(slotsByDate).sort().forEach(function(date) {
-        html += '<div class="slot-date-group">';
-        html += '<div class="slot-date-label">' + date + '</div>';
-        slotsByDate[date].forEach(function(slot) {
-            var timeStr = formatTime(slot.startTime) + ' - ' + formatTime(slot.endTime);
-            var isSelected = selectedSlot && selectedSlot.slotId === slot.slotId;
-            html += '<button class="slot-btn' + (isSelected ? ' selected' : '') + '" ';
-            html += 'onclick="selectSlot(' + slot.slotId + ', \'' + slot.date + '\', \'' + slot.startTime + '\', \'' + slot.endTime + '\')">';
-            html += timeStr + '</button>';
-        });
+    upcomingDates.forEach(function(date) {
+        const daySlots = slotsByDate[date];
+        const dateObj = new Date(date);
+        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const dayName = dayNames[dateObj.getDay()];
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dayOfMonth = String(dateObj.getDate()).padStart(2, '0');
+        const dateStr = month + '-' + dayOfMonth;
+        const isToday = date === today;
+        
+        html += '<div class="timetable-day' + (isToday ? ' today' : '') + '">';
+        html += '<div class="timetable-day-header">';
+        html += '<div class="timetable-day-name">' + dayName + '</div>';
+        html += '<div class="timetable-day-date">' + dateStr + '</div>';
         html += '</div>';
+        html += '<div class="timetable-day-content">';
+        
+        if (daySlots.length === 0) {
+            html += '<div class="timetable-empty">No slots</div>';
+        } else {
+            daySlots.forEach(function(slot) {
+                const timeStr = formatTime(slot.startTime) + ' - ' + formatTime(slot.endTime);
+                const isSelected = selectedSlot && selectedSlot.slotId === slot.slotId && selectedSlot.appointmentDate === slot.appointmentDate;
+                const occurrenceStatus = slot.occurrenceStatus || 'AVAILABLE';
+                const isBookable = slot.bookable !== false && occurrenceStatus === 'AVAILABLE';
+                
+                if (isBookable) {
+                    // Available slot - clickable
+                    html += '<button class="time-chip' + (isSelected ? ' selected' : '') + '" ';
+                    html += 'onclick="selectSlot(' + slot.slotId + ', \'' + slot.appointmentDate + '\', \'' + slot.startTime + '\', \'' + slot.endTime + '\')">';
+                    html += timeStr + '</button>';
+                } else {
+                    // Occupied slot - disabled with status
+                    const statusLabel = occurrenceStatus.charAt(0) + occurrenceStatus.slice(1).toLowerCase();
+                    html += '<button class="time-chip disabled" disabled ';
+                    html += 'title="' + statusLabel + ' - Not available">';
+                    html += timeStr + ' <span class="slot-status-badge">' + statusLabel + '</span></button>';
+                }
+            });
+        }
+        
+        html += '</div></div>';
     });
     
-    list.innerHTML = html;
+    timetable.innerHTML = html;
+}
+
+// Legacy function - kept for compatibility
+function displayAvailableSlotsOld(slots) {
+    displayAvailableSlots(slots);
 }
 
 // Format time to HH:MM
@@ -671,10 +845,10 @@ function formatTime(time) {
 }
 
 // Select slot
-function selectSlot(slotId, date, startTime, endTime) {
+function selectSlot(slotId, appointmentDate, startTime, endTime) {
     selectedSlot = {
         slotId: slotId,
-        date: date,
+        appointmentDate: appointmentDate,
         startTime: startTime,
         endTime: endTime,
         specialistId: selectedSpecialist.specialistId
@@ -703,7 +877,7 @@ function displaySelectedSlot() {
     summaryDiv.innerHTML = '<div class="booking-summary">' +
         '<div class="booking-summary-item"><strong>Specialist</strong><span>' + (selectedSpecialist.username || '-') + '</span></div>' +
         '<div class="booking-summary-item"><strong>Category</strong><span>' + (selectedSpecialist.categoryName || '-') + '</span></div>' +
-        '<div class="booking-summary-item"><strong>Date</strong><span>' + selectedSlot.date + '</span></div>' +
+        '<div class="booking-summary-item"><strong>Appointment Date</strong><span>' + (selectedSlot.appointmentDate || '-') + '</span></div>' +
         '<div class="booking-summary-item"><strong>Time</strong><span>' + timeStr + '</span></div>' +
         '<div class="booking-summary-price">Consultation Fee: ' + price + '</div>' +
         '</div>';
@@ -761,6 +935,7 @@ async function handleCreateBooking(e) {
         customerId: currentUser.customerId,
         specialistId: selectedSpecialist.specialistId,
         slotId: selectedSlot.slotId,
+        appointmentDate: selectedSlot.appointmentDate,
         topic: topic,
         notes: notes
     };
@@ -895,11 +1070,12 @@ function displayMyBookings(bookings) {
     
     // Sort bookings by date/time descending (most recent first)
     bookings.sort(function(a, b) {
-        var parsedA = parseSlotDateTime(a);
-        var parsedB = parseSlotDateTime(b);
-        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
-        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
-        return dateB - dateA;
+        var dateA = a.appointmentDate || '1970-01-01';
+        var dateB = b.appointmentDate || '1970-01-01';
+        var timeA = a.slotStartTime || '00:00';
+        var timeB = b.slotStartTime || '00:00';
+        if (dateA !== dateB) return dateB.localeCompare(dateA);
+        return timeB.localeCompare(timeA);
     });
     
     bookings.forEach(function(b) {
@@ -1003,16 +1179,15 @@ function displayRescheduleSlots(slots) {
     }
     
     var html = '<table><thead><tr>';
-    html += '<th>Select</th><th>ID</th><th>Date</th><th>Start</th><th>End</th>';
+    html += '<th>Select</th><th>Date</th><th>Start</th><th>End</th>';
     html += '</tr></thead><tbody>';
     
     slots.forEach(function(slot) {
         html += '<tr>';
-        html += '<td><input type="radio" name="reschedule-slot" value="' + slot.slotId + '"></td>';
-        html += '<td>' + slot.slotId + '</td>';
-        html += '<td>' + slot.date + '</td>';
-        html += '<td>' + slot.startTime + '</td>';
-        html += '<td>' + slot.endTime + '</td>';
+        html += '<td><input type="radio" name="reschedule-slot" value="' + slot.slotId + '" data-date="' + slot.appointmentDate + '"></td>';
+        html += '<td>' + slot.appointmentDate + '</td>';
+        html += '<td>' + formatTime(slot.startTime) + '</td>';
+        html += '<td>' + formatTime(slot.endTime) + '</td>';
         html += '</tr>';
     });
     
@@ -1034,17 +1209,18 @@ async function confirmReschedule() {
     }
     
     var newSlotId = parseInt(selectedRadio.value);
+    var newAppointmentDate = selectedRadio.getAttribute('data-date');
     
     clearDebug();
     setDebugMethod('PUT');
     setDebugUrl('/api/bookings/' + selectedBooking.bookingId + '/reschedule');
-    setDebugRequest({ newSlotId: newSlotId });
+    setDebugRequest({ newSlotId: newSlotId, newAppointmentDate: newAppointmentDate });
     
     try {
         var response = await fetch('/api/bookings/' + selectedBooking.bookingId + '/reschedule', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newSlotId: newSlotId })
+            body: JSON.stringify({ newSlotId: newSlotId, newAppointmentDate: newAppointmentDate })
         });
         
         var data = await response.json();
@@ -1113,7 +1289,7 @@ async function cancelBookingCustomer(bookingId) {
 // Format booking date/time for display
 function formatBookingDateTime(booking) {
     var parsed = parseSlotDateTime(booking);
-    var dateStr = parsed.slotDate || '-';
+    var dateStr = parsed.appointmentDate || '-';
     var startTimeStr = parsed.slotStartTime ? formatTime(parsed.slotStartTime) : null;
     var endTimeStr = parsed.slotEndTime ? formatTime(parsed.slotEndTime) : null;
     
@@ -1128,11 +1304,11 @@ function formatBookingDateTime(booking) {
     return { date: dateStr, time: timeStr };
 }
 
-// Parse slotDateTime into date and time components
+// Parse slot data into date and time components
 function parseSlotDateTime(booking) {
-    if (booking.slotDate && booking.slotStartTime) {
+    if (booking.appointmentDate) {
         return {
-            slotDate: booking.slotDate,
+            appointmentDate: booking.appointmentDate,
             slotStartTime: booking.slotStartTime,
             slotEndTime: booking.slotEndTime
         };
@@ -1142,13 +1318,13 @@ function parseSlotDateTime(booking) {
         if (typeof dt === 'string') {
             var parts = dt.split('T');
             return {
-                slotDate: parts[0],
+                appointmentDate: parts[0],
                 slotStartTime: parts[1] ? parts[1].substring(0, 5) : null,
                 slotEndTime: null
             };
         }
     }
-    return { slotDate: null, slotStartTime: null, slotEndTime: null };
+    return { appointmentDate: null, slotStartTime: null, slotEndTime: null };
 }
 
 // Load my schedule
@@ -1193,11 +1369,12 @@ function displaySpecialistBookings(bookings) {
     
     // Sort by date/time ascending (upcoming first)
     bookings.sort(function(a, b) {
-        var parsedA = parseSlotDateTime(a);
-        var parsedB = parseSlotDateTime(b);
-        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
-        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
-        return dateA - dateB;
+        var dateA = a.appointmentDate || '1970-01-01';
+        var dateB = b.appointmentDate || '1970-01-01';
+        var timeA = a.slotStartTime || '00:00';
+        var timeB = b.slotStartTime || '00:00';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return timeA.localeCompare(timeB);
     });
     
     bookings.forEach(function(b) {
@@ -1294,11 +1471,12 @@ function displayAllBookings(bookings) {
     
     // Sort by date/time ascending
     bookings.sort(function(a, b) {
-        var parsedA = parseSlotDateTime(a);
-        var parsedB = parseSlotDateTime(b);
-        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
-        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
-        return dateA - dateB;
+        var dateA = a.appointmentDate || '1970-01-01';
+        var dateB = b.appointmentDate || '1970-01-01';
+        var timeA = a.slotStartTime || '00:00';
+        var timeB = b.slotStartTime || '00:00';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return timeA.localeCompare(timeB);
     });
     
     bookings.forEach(function(b) {
@@ -1797,20 +1975,20 @@ function displaySlots(slots) {
     }
     
     var html = '<table><thead><tr>';
-    html += '<th>ID</th><th>Specialist</th><th>Date</th><th>Start</th><th>End</th><th>Status</th><th>Action</th>';
+    html += '<th>ID</th><th>Specialist</th><th>Day</th><th>Start</th><th>End</th><th>Status</th><th>Action</th>';
     html += '</tr></thead><tbody>';
     
     slots.forEach(function(slot) {
         html += '<tr>';
         html += '<td>' + slot.slotId + '</td>';
         html += '<td>' + (slot.specialistName || '-') + '</td>';
-        html += '<td>' + slot.date + '</td>';
-        html += '<td>' + slot.startTime + '</td>';
-        html += '<td>' + slot.endTime + '</td>';
+        html += '<td>' + (slot.dayOfWeek || '-') + '</td>';
+        html += '<td>' + formatTime(slot.startTime) + '</td>';
+        html += '<td>' + formatTime(slot.endTime) + '</td>';
         html += '<td>' + slot.status + '</td>';
         var actionBtn = slot.status === 'AVAILABLE'
             ? '<button onclick="deleteSlot(' + slot.slotId + ')">Delete</button>'
-            : '<button disabled>Booked</button>';
+            : '<button disabled>' + slot.status + '</button>';
         html += '<td>' + actionBtn + '</td>';
         html += '</tr>';
     });
@@ -1824,12 +2002,13 @@ async function handleCreateSlot(e) {
     e.preventDefault();
     
     var specialistId = parseInt(document.getElementById('slot-specialist-id-create').value);
-    var date = document.getElementById('slot-date').value;
+    var dayOfWeek = document.getElementById('slot-day-of-week').value;
     var startTime = document.getElementById('slot-start').value;
     var endTime = document.getElementById('slot-end').value;
     var status = document.getElementById('slot-status').value;
     
-    var requestBody = { specialistId: specialistId, date: date, startTime: startTime, endTime: endTime, status: status };
+    var requestBody = { specialistId: specialistId, dayOfWeek: dayOfWeek, startTime: startTime, endTime: endTime };
+    if (status) requestBody.status = status;
     
     clearDebug();
     setDebugMethod('POST');
@@ -1864,14 +2043,14 @@ async function handleUpdateSlot(e) {
     
     var slotId = parseInt(document.getElementById('update-slot-id').value);
     var specialistId = document.getElementById('update-slot-specialist').value;
-    var date = document.getElementById('update-slot-date').value;
+    var dayOfWeek = document.getElementById('update-slot-day-of-week').value;
     var startTime = document.getElementById('update-slot-start').value;
     var endTime = document.getElementById('update-slot-end').value;
     var status = document.getElementById('update-slot-status').value;
     
     var requestBody = {};
     if (specialistId) requestBody.specialistId = parseInt(specialistId);
-    if (date) requestBody.date = date;
+    if (dayOfWeek) requestBody.dayOfWeek = dayOfWeek;
     if (startTime) requestBody.startTime = startTime;
     if (endTime) requestBody.endTime = endTime;
     if (status) requestBody.status = status;
