@@ -1,6 +1,7 @@
 package com.cpt202.consultationbooking.service;
 
 import com.cpt202.consultationbooking.dto.request.CreateSlotRequest;
+import com.cpt202.consultationbooking.dto.request.UpdateSlotRequest;
 import com.cpt202.consultationbooking.dto.response.SlotResponse;
 import com.cpt202.consultationbooking.entity.AvailabilitySlot;
 import com.cpt202.consultationbooking.entity.Specialist;
@@ -12,6 +13,7 @@ import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,11 +34,7 @@ public class AvailabilitySlotService {
         Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
 
-        if (request.getStartTime() != null && request.getEndTime() != null) {
-            if (!request.getStartTime().isBefore(request.getEndTime())) {
-                throw new BusinessException("Start time must be before end time");
-            }
-        }
+        validateTimeRange(request.getStartTime(), request.getEndTime());
 
         SlotStatus status = request.getStatus() != null ? request.getStatus() : SlotStatus.AVAILABLE;
 
@@ -52,6 +50,63 @@ public class AvailabilitySlotService {
         return toResponse(saved);
     }
 
+    public SlotResponse getSlotById(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+        return toResponse(slot);
+    }
+
+    @Transactional
+    public SlotResponse updateSlot(Long slotId, UpdateSlotRequest request) {
+        AvailabilitySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        if (slot.getStatus() == SlotStatus.BOOKED) {
+            if (request.getDate() != null || request.getStartTime() != null || request.getEndTime() != null) {
+                throw new BusinessException("Cannot modify date or time for a booked slot");
+            }
+        }
+
+        if (request.getSpecialistId() != null) {
+            Specialist specialist = specialistRepository.findById(request.getSpecialistId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
+            slot.setSpecialist(specialist);
+        }
+
+        if (request.getDate() != null) {
+            slot.setDate(request.getDate());
+        }
+
+        LocalTime startTime = request.getStartTime() != null ? request.getStartTime() : slot.getStartTime();
+        LocalTime endTime = request.getEndTime() != null ? request.getEndTime() : slot.getEndTime();
+
+        if (request.getStartTime() != null || request.getEndTime() != null) {
+            validateTimeRange(startTime, endTime);
+            slot.setStartTime(startTime);
+            slot.setEndTime(endTime);
+        }
+
+        if (request.getStatus() != null) {
+            slot.setStatus(request.getStatus());
+        }
+
+        AvailabilitySlot saved = slotRepository.save(slot);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void deleteSlot(Long slotId) {
+        AvailabilitySlot slot = slotRepository.findById(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        if (slot.getStatus() == SlotStatus.BOOKED) {
+            throw new BusinessException("Cannot delete a booked slot");
+        }
+
+        slot.setStatus(SlotStatus.UNAVAILABLE);
+        slotRepository.save(slot);
+    }
+
     public List<SlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
         return slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE)
                 .stream()
@@ -64,6 +119,12 @@ public class AvailabilitySlotService {
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
+        if (startTime != null && endTime != null && !startTime.isBefore(endTime)) {
+            throw new BusinessException("Start time must be before end time");
+        }
     }
 
     private SlotResponse toResponse(AvailabilitySlot slot) {
