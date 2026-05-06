@@ -52,6 +52,11 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("Initializing sample data...");
 
+        // ============================================================
+        // USERS
+        // ============================================================
+
+        // Operation Manager
         User managerUser = userRepository.save(User.builder()
                 .username("manager1")
                 .password("password123")
@@ -62,6 +67,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
         operationManagerRepository.save(OperationManager.builder().user(managerUser).build());
 
+        // Customers
         User customer1 = userRepository.save(User.builder()
                 .username("customer1")
                 .password("password123")
@@ -82,6 +88,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
         customerRepository.save(Customer.builder().user(customer2).build());
 
+        // Specialists
         User specialistUser1 = userRepository.save(User.builder()
                 .username("specialist1")
                 .password("password123")
@@ -100,44 +107,171 @@ public class DataInitializer implements CommandLineRunner {
                 .status(UserStatus.ACTIVE)
                 .build());
 
-        ExpertiseCategory category1 = categoryRepository.save(ExpertiseCategory.builder()
+        // Additional specialists for richer demo data
+        User specialistUser3 = userRepository.save(User.builder()
+                .username("career_specialist")
+                .password("password123")
+                .email("career@example.com")
+                .address("303 Career Center")
+                .role(UserRole.SPECIALIST)
+                .status(UserStatus.ACTIVE)
+                .build());
+
+        User specialistUser4 = userRepository.save(User.builder()
+                .username("finance_specialist")
+                .password("password123")
+                .email("finance@example.com")
+                .address("404 Finance Tower")
+                .role(UserRole.SPECIALIST)
+                .status(UserStatus.ACTIVE)
+                .build());
+
+        User specialistUser5 = userRepository.save(User.builder()
+                .username("academic_specialist")
+                .password("password123")
+                .email("academic@example.com")
+                .address("505 University Ave")
+                .role(UserRole.SPECIALIST)
+                .status(UserStatus.ACTIVE)
+                .build());
+
+        // ============================================================
+        // EXPERTISE CATEGORIES
+        // Demo users: manager1, customer1, customer2, specialist1-5
+        // ============================================================
+
+        ExpertiseCategory softwareEng = categoryRepository.save(ExpertiseCategory.builder()
                 .name("Software Engineering")
                 .status("ACTIVE")
                 .build());
 
-        ExpertiseCategory category2 = categoryRepository.save(ExpertiseCategory.builder()
+        ExpertiseCategory dataScience = categoryRepository.save(ExpertiseCategory.builder()
                 .name("Data Science")
                 .status("ACTIVE")
                 .build());
 
-        Level level1 = levelRepository.save(Level.builder()
+        ExpertiseCategory careerConsulting = categoryRepository.save(ExpertiseCategory.builder()
+                .name("Career Consulting")
+                .status("ACTIVE")
+                .build());
+
+        ExpertiseCategory dataAnalytics = categoryRepository.save(ExpertiseCategory.builder()
+                .name("Data Analytics")
+                .status("ACTIVE")
+                .build());
+
+        ExpertiseCategory financeConsulting = categoryRepository.save(ExpertiseCategory.builder()
+                .name("Finance Consulting")
+                .status("ACTIVE")
+                .build());
+
+        ExpertiseCategory businessStrategy = categoryRepository.save(ExpertiseCategory.builder()
+                .name("Business Strategy")
+                .status("ACTIVE")
+                .build());
+
+        ExpertiseCategory academicPlanning = categoryRepository.save(ExpertiseCategory.builder()
+                .name("Academic Planning")
+                .status("ACTIVE")
+                .build());
+
+        // ============================================================
+        // LEVELS
+        // ============================================================
+
+        Level junior = levelRepository.save(Level.builder()
                 .name("Junior")
                 .build());
 
-        Level level2 = levelRepository.save(Level.builder()
+        Level senior = levelRepository.save(Level.builder()
                 .name("Senior")
                 .build());
 
-        Specialist specialist1 = specialistRepository.save(Specialist.builder()
-                .user(specialistUser1)
-                .category(category1)
-                .level(level2)
-                .status(SpecialistStatus.ACTIVE)
-                .fee(new BigDecimal("150.00"))
-                .information("Expert in software architecture and design patterns")
+        Level expert = levelRepository.save(Level.builder()
+                .name("Expert")
                 .build());
 
+        // ============================================================
+        // SPECIALISTS
+        // ============================================================
+
+        // Specialist 1: Software Engineering - Senior
+        Specialist specialist1 = specialistRepository.save(Specialist.builder()
+                .user(specialistUser1)
+                .category(softwareEng)
+                .level(senior)
+                .status(SpecialistStatus.ACTIVE)
+                .fee(new BigDecimal("150.00"))
+                .information("Senior software architect with 10+ years of experience in enterprise systems. " +
+                        "Expert in microservices architecture, cloud-native applications, and scalable system design. " +
+                        "Previously led teams at major tech companies, helping startups design robust backend infrastructure. " +
+                        "Ideal for technical leaders seeking architectural guidance, system modernization advice, " +
+                        "or help with complex technical decisions.")
+                .build());
+
+        // Specialist 2: Data Science - Junior
         Specialist specialist2 = specialistRepository.save(Specialist.builder()
                 .user(specialistUser2)
-                .category(category2)
-                .level(level1)
+                .category(dataScience)
+                .level(junior)
                 .status(SpecialistStatus.ACTIVE)
                 .fee(new BigDecimal("100.00"))
-                .information("Specialist in machine learning and data analysis")
+                .information("Data science professional specializing in machine learning and statistical analysis. " +
+                        "Experienced in Python, R, and various ML frameworks including TensorFlow and PyTorch. " +
+                        "Passionate about turning raw data into actionable insights. " +
+                        "Great for beginners exploring data science careers or businesses looking to implement " +
+                        "data-driven decision making.")
                 .build());
+
+        // Specialist 3: Career Consulting - Senior
+        Specialist specialist3 = specialistRepository.save(Specialist.builder()
+                .user(specialistUser3)
+                .category(careerConsulting)
+                .level(senior)
+                .status(SpecialistStatus.ACTIVE)
+                .fee(new BigDecimal("120.00"))
+                .information("Career transformation coach with 15 years of experience across multiple industries. " +
+                        "Specialized in helping professionals navigate career transitions, negotiate salaries, " +
+                        "and develop leadership skills. Certified career counselor with a track record of helping " +
+                        "hundreds of clients achieve their career goals. " +
+                        "Perfect for anyone feeling stuck in their career or planning a major professional pivot.")
+                .build());
+
+        // Specialist 4: Finance Consulting - Expert
+        Specialist specialist4 = specialistRepository.save(Specialist.builder()
+                .user(specialistUser4)
+                .category(financeConsulting)
+                .level(expert)
+                .status(SpecialistStatus.ACTIVE)
+                .fee(new BigDecimal("200.00"))
+                .information("Financial advisor and investment strategist with CFA certification and 20 years " +
+                        "of Wall Street experience. Expert in personal wealth management, retirement planning, " +
+                        "portfolio diversification, and risk assessment. Former hedge fund manager now dedicated " +
+                        "to helping individuals and small businesses achieve financial independence. " +
+                        "Suitable for clients seeking comprehensive financial planning and investment guidance.")
+                .build());
+
+        // Specialist 5: Academic Planning - Senior
+        Specialist specialist5 = specialistRepository.save(Specialist.builder()
+                .user(specialistUser5)
+                .category(academicPlanning)
+                .level(senior)
+                .status(SpecialistStatus.ACTIVE)
+                .fee(new BigDecimal("90.00"))
+                .information("Education consultant specializing in college admissions and academic planning. " +
+                        "Former admissions committee member at a top-tier university with insider knowledge " +
+                        "of what makes applications stand out. Expert in standardized test preparation strategies, " +
+                        "extracurricular development, and scholarship optimization. " +
+                        "Ideal for high school students and their parents navigating the college application process.")
+                .build());
+
+        // ============================================================
+        // AVAILABILITY SLOTS
+        // ============================================================
 
         LocalDate today = LocalDate.now();
 
+        // Specialist 1 slots (Software Engineering)
         slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist1)
                 .date(today.plusDays(1))
@@ -163,6 +297,15 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist1)
+                .date(today.plusDays(3))
+                .startTime(LocalTime.of(16, 0))
+                .endTime(LocalTime.of(17, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 2 slots (Data Science)
+        slotRepository.save(AvailabilitySlot.builder()
                 .specialist(specialist2)
                 .date(today.plusDays(1))
                 .startTime(LocalTime.of(11, 0))
@@ -175,6 +318,89 @@ public class DataInitializer implements CommandLineRunner {
                 .date(today.plusDays(2))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist2)
+                .date(today.plusDays(4))
+                .startTime(LocalTime.of(13, 0))
+                .endTime(LocalTime.of(14, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 3 slots (Career Consulting)
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .date(today.plusDays(1))
+                .startTime(LocalTime.of(13, 0))
+                .endTime(LocalTime.of(14, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .date(today.plusDays(2))
+                .startTime(LocalTime.of(10, 0))
+                .endTime(LocalTime.of(11, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist3)
+                .date(today.plusDays(5))
+                .startTime(LocalTime.of(15, 0))
+                .endTime(LocalTime.of(16, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 4 slots (Finance Consulting)
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .date(today.plusDays(1))
+                .startTime(LocalTime.of(15, 0))
+                .endTime(LocalTime.of(16, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .date(today.plusDays(3))
+                .startTime(LocalTime.of(10, 0))
+                .endTime(LocalTime.of(11, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist4)
+                .date(today.plusDays(4))
+                .startTime(LocalTime.of(14, 0))
+                .endTime(LocalTime.of(15, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        // Specialist 5 slots (Academic Planning)
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist5)
+                .date(today.plusDays(2))
+                .startTime(LocalTime.of(11, 0))
+                .endTime(LocalTime.of(12, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist5)
+                .date(today.plusDays(3))
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(10, 0))
+                .status(SlotStatus.AVAILABLE)
+                .build());
+
+        slotRepository.save(AvailabilitySlot.builder()
+                .specialist(specialist5)
+                .date(today.plusDays(5))
+                .startTime(LocalTime.of(14, 0))
+                .endTime(LocalTime.of(15, 0))
                 .status(SlotStatus.AVAILABLE)
                 .build());
 

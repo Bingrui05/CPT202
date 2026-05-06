@@ -1,6 +1,7 @@
 package com.cpt202.consultationbooking.service;
 
 import com.cpt202.consultationbooking.dto.request.CreateSpecialistRequest;
+import com.cpt202.consultationbooking.dto.request.UpdateSpecialistRequest;
 import com.cpt202.consultationbooking.dto.response.SpecialistResponse;
 import com.cpt202.consultationbooking.entity.ExpertiseCategory;
 import com.cpt202.consultationbooking.entity.Level;
@@ -103,6 +104,47 @@ public class SpecialistService {
         Specialist specialist = specialistRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
         return toResponse(specialist);
+    }
+
+    @Transactional
+    public SpecialistResponse updateSpecialist(Long specialistId, UpdateSpecialistRequest request) {
+        Specialist specialist = specialistRepository.findById(specialistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
+
+        if (request.getCategoryId() != null) {
+            ExpertiseCategory category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            specialist.setCategory(category);
+        }
+
+        if (request.getLevelId() != null) {
+            Level level = levelRepository.findById(request.getLevelId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Level not found"));
+            specialist.setLevel(level);
+        }
+
+        if (request.getFee() != null) {
+            specialist.setFee(request.getFee());
+        }
+
+        if (request.getStatus() != null) {
+            specialist.setStatus(request.getStatus());
+        }
+
+        if (request.getInformation() != null) {
+            specialist.setInformation(request.getInformation());
+        }
+
+        Specialist updated = specialistRepository.save(specialist);
+        return toResponse(updated);
+    }
+
+    @Transactional
+    public void deactivateSpecialist(Long specialistId) {
+        Specialist specialist = specialistRepository.findById(specialistId)
+                .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
+        specialist.setStatus(SpecialistStatus.INACTIVE);
+        specialistRepository.save(specialist);
     }
 
     private SpecialistResponse toResponse(Specialist specialist) {

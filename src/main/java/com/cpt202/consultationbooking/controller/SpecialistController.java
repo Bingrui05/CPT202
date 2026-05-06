@@ -1,6 +1,7 @@
 package com.cpt202.consultationbooking.controller;
 
 import com.cpt202.consultationbooking.dto.request.CreateSpecialistRequest;
+import com.cpt202.consultationbooking.dto.request.UpdateSpecialistRequest;
 import com.cpt202.consultationbooking.dto.response.ApiResponse;
 import com.cpt202.consultationbooking.dto.response.SpecialistResponse;
 import com.cpt202.consultationbooking.service.SpecialistService;
@@ -49,5 +50,19 @@ public class SpecialistController {
         List<SpecialistResponse> specialists = specialistService.searchSpecialists(
                 keyword, categoryId, levelId, status, onlyAvailable != null ? onlyAvailable : false);
         return ResponseEntity.ok(ApiResponse.success("Search completed", specialists));
+    }
+
+    @PutMapping("/{specialistId}")
+    public ResponseEntity<ApiResponse<SpecialistResponse>> updateSpecialist(
+            @PathVariable Long specialistId,
+            @Valid @RequestBody UpdateSpecialistRequest request) {
+        SpecialistResponse response = specialistService.updateSpecialist(specialistId, request);
+        return ResponseEntity.ok(ApiResponse.success("Specialist updated successfully", response));
+    }
+
+    @DeleteMapping("/{specialistId}")
+    public ResponseEntity<ApiResponse<Void>> deactivateSpecialist(@PathVariable Long specialistId) {
+        specialistService.deactivateSpecialist(specialistId);
+        return ResponseEntity.ok(ApiResponse.success("Specialist deactivated successfully", null));
     }
 }
