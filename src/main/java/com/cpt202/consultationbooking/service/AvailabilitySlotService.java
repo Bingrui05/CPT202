@@ -5,28 +5,36 @@ import com.cpt202.consultationbooking.dto.request.UpdateSlotRequest;
 import com.cpt202.consultationbooking.dto.response.SlotResponse;
 import com.cpt202.consultationbooking.entity.AvailabilitySlot;
 import com.cpt202.consultationbooking.entity.Specialist;
+import com.cpt202.consultationbooking.enums.BookingStatus;
 import com.cpt202.consultationbooking.enums.SlotStatus;
 import com.cpt202.consultationbooking.exception.BusinessException;
 import com.cpt202.consultationbooking.exception.ResourceNotFoundException;
 import com.cpt202.consultationbooking.repository.AvailabilitySlotRepository;
+import com.cpt202.consultationbooking.repository.BookingRepository;
 import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class AvailabilitySlotService {
 
+    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+
     private final AvailabilitySlotRepository slotRepository;
     private final SpecialistRepository specialistRepository;
+    private final BookingRepository bookingRepository;
 
     public AvailabilitySlotService(AvailabilitySlotRepository slotRepository,
-                                   SpecialistRepository specialistRepository) {
+                                   SpecialistRepository specialistRepository,
+                                   BookingRepository bookingRepository) {
         this.slotRepository = slotRepository;
         this.specialistRepository = specialistRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @Transactional
@@ -110,6 +118,7 @@ public class AvailabilitySlotService {
     public List<SlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
         return slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE)
                 .stream()
+                .filter(slot -> !bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

@@ -7,13 +7,19 @@ public class LoginResponse {
     private Long userId;
     private String username;
     private UserRole role;
+    private Long customerId;
+    private Long specialistId;
+    private Long managerId;
 
     public LoginResponse() {}
 
-    public LoginResponse(Long userId, String username, UserRole role) {
+    public LoginResponse(Long userId, String username, UserRole role, Long customerId, Long specialistId, Long managerId) {
         this.userId = userId;
         this.username = username;
         this.role = role;
+        this.customerId = customerId;
+        this.specialistId = specialistId;
+        this.managerId = managerId;
     }
 
     public Long getUserId() { return userId; }
@@ -22,6 +28,12 @@ public class LoginResponse {
     public void setUsername(String username) { this.username = username; }
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
+    public Long getCustomerId() { return customerId; }
+    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+    public Long getSpecialistId() { return specialistId; }
+    public void setSpecialistId(Long specialistId) { this.specialistId = specialistId; }
+    public Long getManagerId() { return managerId; }
+    public void setManagerId(Long managerId) { this.managerId = managerId; }
 
     public static LoginResponseBuilder builder() {
         return new LoginResponseBuilder();
@@ -31,10 +43,16 @@ public class LoginResponse {
         private Long userId;
         private String username;
         private UserRole role;
+        private Long customerId;
+        private Long specialistId;
+        private Long managerId;
 
         public LoginResponseBuilder userId(Long userId) { this.userId = userId; return this; }
         public LoginResponseBuilder username(String username) { this.username = username; return this; }
         public LoginResponseBuilder role(UserRole role) { this.role = role; return this; }
-        public LoginResponse build() { return new LoginResponse(userId, username, role); }
+        public LoginResponseBuilder customerId(Long customerId) { this.customerId = customerId; return this; }
+        public LoginResponseBuilder specialistId(Long specialistId) { this.specialistId = specialistId; return this; }
+        public LoginResponseBuilder managerId(Long managerId) { this.managerId = managerId; return this; }
+        public LoginResponse build() { return new LoginResponse(userId, username, role, customerId, specialistId, managerId); }
     }
 }

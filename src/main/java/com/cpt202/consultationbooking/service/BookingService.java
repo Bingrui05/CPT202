@@ -19,11 +19,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
+
+    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED);
 
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
@@ -59,8 +62,8 @@ public class BookingService {
             throw new BusinessException("Slot is not available");
         }
 
-        if (bookingRepository.existsBySlot_SlotId(slot.getSlotId())) {
-            throw new BusinessException("Slot has already been booked");
+        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            throw new BusinessException("This slot is already occupied by a pending or confirmed booking");
         }
 
         Booking booking = Booking.builder()
@@ -110,13 +113,16 @@ public class BookingService {
         }
 
         AvailabilitySlot slot = booking.getSlot();
-        slot.setStatus(SlotStatus.AVAILABLE);
-        slotRepository.save(slot);
-
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            slot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(slot);
+        }
+
+        return toResponse(booking);
     }
 
     @Transactional
@@ -128,10 +134,17 @@ public class BookingService {
             throw new BusinessException("Only CONFIRMED booking can be completed");
         }
 
+        AvailabilitySlot slot = booking.getSlot();
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            slot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(slot);
+        }
+
+        return toResponse(booking);
     }
 
     @Transactional
@@ -158,22 +171,25 @@ public class BookingService {
             throw new BusinessException("New slot is not available");
         }
 
-        if (bookingRepository.existsBySlot_SlotId(newSlot.getSlotId())) {
-            throw new BusinessException("New slot has already been booked by another booking");
+        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(newSlot.getSlotId(), ACTIVE_STATUSES)) {
+            throw new BusinessException("This slot is already occupied by a pending or confirmed booking");
         }
 
         AvailabilitySlot oldSlot = booking.getSlot();
-        oldSlot.setStatus(SlotStatus.AVAILABLE);
-        slotRepository.save(oldSlot);
+        booking.setSlot(newSlot);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setUpdatedAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(oldSlot.getSlotId(), ACTIVE_STATUSES)) {
+            oldSlot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(oldSlot);
+        }
 
         newSlot.setStatus(SlotStatus.BOOKED);
         slotRepository.save(newSlot);
 
-        booking.setSlot(newSlot);
-        booking.setStatus(BookingStatus.PENDING);
-        booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        return toResponse(booking);
     }
 
     public List<BookingResponse> getBookingsByCustomer(Long customerId) {
