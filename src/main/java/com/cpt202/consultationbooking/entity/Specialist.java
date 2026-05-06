@@ -41,17 +41,6 @@ public class Specialist {
 
     public Specialist() {}
 
-    public Specialist(Long specialistId, User user, ExpertiseCategory category, Level level,
-                     SpecialistStatus status, BigDecimal fee, String information) {
-        this.specialistId = specialistId;
-        this.user = user;
-        this.category = category;
-        this.level = level;
-        this.status = status;
-        this.fee = fee;
-        this.information = information;
-    }
-
     public Long getSpecialistId() { return specialistId; }
     public void setSpecialistId(Long specialistId) { this.specialistId = specialistId; }
     public User getUser() { return user; }
@@ -68,6 +57,10 @@ public class Specialist {
     public void setInformation(String information) { this.information = information; }
     public List<AvailabilitySlot> getSlotList() { return slotList; }
     public void setSlotList(List<AvailabilitySlot> slotList) { this.slotList = slotList; }
+
+    public boolean isActive() {
+        return this.status == SpecialistStatus.ACTIVE;
+    }
 
     public static SpecialistBuilder builder() { return new SpecialistBuilder(); }
 
@@ -87,8 +80,17 @@ public class Specialist {
         public SpecialistBuilder status(SpecialistStatus status) { this.status = status; return this; }
         public SpecialistBuilder fee(BigDecimal fee) { this.fee = fee; return this; }
         public SpecialistBuilder information(String information) { this.information = information; return this; }
+        
         public Specialist build() {
-            return new Specialist(specialistId, user, category, level, status, fee, information);
+            Specialist specialist = new Specialist();
+            specialist.specialistId = this.specialistId;
+            specialist.user = this.user;
+            specialist.category = this.category;
+            specialist.level = this.level;
+            specialist.status = this.status;
+            specialist.fee = this.fee;
+            specialist.information = this.information;
+            return specialist;
         }
     }
 }

@@ -7,10 +7,12 @@ import com.cpt202.consultationbooking.entity.ExpertiseCategory;
 import com.cpt202.consultationbooking.entity.Level;
 import com.cpt202.consultationbooking.entity.Specialist;
 import com.cpt202.consultationbooking.entity.User;
+import com.cpt202.consultationbooking.enums.BookingStatus;
 import com.cpt202.consultationbooking.enums.SpecialistStatus;
 import com.cpt202.consultationbooking.enums.UserRole;
 import com.cpt202.consultationbooking.exception.BusinessException;
 import com.cpt202.consultationbooking.exception.ResourceNotFoundException;
+import com.cpt202.consultationbooking.repository.BookingRepository;
 import com.cpt202.consultationbooking.repository.ExpertiseCategoryRepository;
 import com.cpt202.consultationbooking.repository.LevelRepository;
 import com.cpt202.consultationbooking.repository.SpecialistRepository;
@@ -18,25 +20,34 @@ import com.cpt202.consultationbooking.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class SpecialistService {
 
+    private static final List<BookingStatus> ACTIVE_BOOKING_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, 
+            BookingStatus.CONFIRMED
+    );
+
     private final SpecialistRepository specialistRepository;
     private final UserRepository userRepository;
     private final ExpertiseCategoryRepository categoryRepository;
     private final LevelRepository levelRepository;
+    private final BookingRepository bookingRepository;
 
     public SpecialistService(SpecialistRepository specialistRepository,
-                             UserRepository userRepository,
-                             ExpertiseCategoryRepository categoryRepository,
-                             LevelRepository levelRepository) {
+                           UserRepository userRepository,
+                           ExpertiseCategoryRepository categoryRepository,
+                           LevelRepository levelRepository,
+                           BookingRepository bookingRepository) {
         this.specialistRepository = specialistRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.levelRepository = levelRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @Transactional
@@ -50,6 +61,11 @@ public class SpecialistService {
 
         ExpertiseCategory category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        // Check if category is active
+        if (!category.isActive()) {
+            throw new BusinessException("Cannot assign inactive category to specialist");
+        }
 
         Level level = levelRepository.findById(request.getLevelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Level not found"));
@@ -114,6 +130,10 @@ public class SpecialistService {
         if (request.getCategoryId() != null) {
             ExpertiseCategory category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            // Check if category is active
+            if (!category.isActive()) {
+                throw new BusinessException("Cannot assign inactive category to specialist");
+            }
             specialist.setCategory(category);
         }
 
@@ -143,6 +163,15 @@ public class SpecialistService {
     public void deactivateSpecialist(Long specialistId) {
         Specialist specialist = specialistRepository.findById(specialistId)
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
+
+        // Check if specialist has active bookings
+        boolean hasActiveBookings = bookingRepository.existsBySpecialist_SpecialistIdAndStatusIn(
+                specialistId, ACTIVE_BOOKING_STATUSES);
+
+        if (hasActiveBookings) {
+            throw new BusinessException("Specialist has active bookings and cannot be deactivated");
+        }
+
         specialist.setStatus(SpecialistStatus.INACTIVE);
         specialistRepository.save(specialist);
     }

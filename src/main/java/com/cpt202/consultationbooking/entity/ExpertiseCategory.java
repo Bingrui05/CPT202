@@ -31,6 +31,10 @@ public class ExpertiseCategory {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public boolean isActive() {
+        return "ACTIVE".equalsIgnoreCase(this.status);
+    }
+
     public static ExpertiseCategoryBuilder builder() { return new ExpertiseCategoryBuilder(); }
 
     public static class ExpertiseCategoryBuilder {

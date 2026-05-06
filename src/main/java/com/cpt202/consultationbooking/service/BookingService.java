@@ -19,11 +19,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
+
+    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, 
+            BookingStatus.CONFIRMED
+    );
 
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
@@ -59,8 +65,8 @@ public class BookingService {
             throw new BusinessException("Slot is not available");
         }
 
-        if (bookingRepository.existsBySlot_SlotId(slot.getSlotId())) {
-            throw new BusinessException("Slot has already been booked");
+        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            throw new BusinessException("Slot is already occupied by an active booking");
         }
 
         Booking booking = Booking.builder()
@@ -128,6 +134,10 @@ public class BookingService {
             throw new BusinessException("Only CONFIRMED booking can be completed");
         }
 
+        AvailabilitySlot slot = booking.getSlot();
+        slot.setStatus(SlotStatus.AVAILABLE);
+        slotRepository.save(slot);
+
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
         Booking saved = bookingRepository.save(booking);
@@ -158,8 +168,8 @@ public class BookingService {
             throw new BusinessException("New slot is not available");
         }
 
-        if (bookingRepository.existsBySlot_SlotId(newSlot.getSlotId())) {
-            throw new BusinessException("New slot has already been booked by another booking");
+        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(newSlot.getSlotId(), ACTIVE_STATUSES)) {
+            throw new BusinessException("New slot is already occupied by an active booking");
         }
 
         AvailabilitySlot oldSlot = booking.getSlot();
@@ -212,6 +222,9 @@ public class BookingService {
                 .specialistName(booking.getSpecialist().getUser().getUsername())
                 .slotId(booking.getSlot().getSlotId())
                 .slotDateTime(booking.getSlot().getDate().atTime(booking.getSlot().getStartTime()))
+                .slotDate(booking.getSlot().getDate())
+                .slotStartTime(booking.getSlot().getStartTime())
+                .slotEndTime(booking.getSlot().getEndTime())
                 .topic(booking.getTopic())
                 .notes(booking.getNotes())
                 .status(booking.getStatus())
