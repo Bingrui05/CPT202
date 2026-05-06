@@ -1,0 +1,198 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #000000;
+    padding-bottom: 5px;
+}
+
+h3 {
+    font-size: 16px;
+    margin: 15px 0 10px;
+}
+
+h4 {
+    font-size: 14px;
+    margin: 10px 0 8px;
+}
+
+.section {
+    border: 1px solid #000000;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.subsection {
+    border: 1px dashed #000000;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.demo-buttons {
+    margin: 15px 0;
+}
+
+.demo-buttons button {
+    margin-right: 10px;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    color: #666666;
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    display: inline-block;
+    width: 150px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 5px;
+    border: 1px solid #000000;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+button {
+    padding: 8px 15px;
+    border: 1px solid #000000;
+    background-color: #ffffff;
+    color: #000000;
+    cursor: pointer;
+    margin: 5px 0;
+}
+
+button:hover {
+    background-color: #f0f0f0;
+}
+
+button:disabled {
+    color: #999999;
+    cursor: not-allowed;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+th, td {
+    border: 1px solid #000000;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f0f0f0;
+}
+
+pre {
+    background-color: #f5f5f5;
+    border: 1px solid #000000;
+    padding: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#messages {
+    margin-top: 20px;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #000000;
+}
+
+.message.success {
+    background-color: #f0f0f0;
+}
+
+.message.error {
+    background-color: #ffffff;
+    border-color: #000000;
+}
+
+.guide {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border: 1px solid #000000;
+}
+
+.guide ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.guide li {
+    margin-bottom: 5px;
+}
+
+#user-info {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border: 1px solid #000000;
+    margin-bottom: 10px;
+}
+
+#user-info p {
+    margin: 5px 0;
+}
+
+.action-buttons {
+    margin-top: 10px;
+}
+
+#debug-section {
+    background-color: #fafafa;
+}
+
+.debug-item {
+    margin-bottom: 10px;
+}
+
+#booking-result,
+#reschedule-result {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #000000;
+    background-color: #f5f5f5;
+}
