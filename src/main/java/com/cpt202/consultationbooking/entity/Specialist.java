@@ -3,6 +3,8 @@ package com.cpt202.consultationbooking.entity;
 import com.cpt202.consultationbooking.enums.SpecialistStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "specialists")
@@ -34,6 +36,9 @@ public class Specialist {
     @Column(length = 1000)
     private String information;
 
+    @OneToMany(mappedBy = "specialist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<AvailabilitySlot> slotList = new ArrayList<>();
+
     public Specialist() {}
 
     public Specialist(Long specialistId, User user, ExpertiseCategory category, Level level,
@@ -61,6 +66,8 @@ public class Specialist {
     public void setFee(BigDecimal fee) { this.fee = fee; }
     public String getInformation() { return information; }
     public void setInformation(String information) { this.information = information; }
+    public List<AvailabilitySlot> getSlotList() { return slotList; }
+    public void setSlotList(List<AvailabilitySlot> slotList) { this.slotList = slotList; }
 
     public static SpecialistBuilder builder() { return new SpecialistBuilder(); }
 

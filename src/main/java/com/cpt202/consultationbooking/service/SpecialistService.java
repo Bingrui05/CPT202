@@ -72,33 +72,31 @@ public class SpecialistService {
                 .collect(Collectors.toList());
     }
 
-    public List<SpecialistResponse> searchSpecialists(Long categoryId, Long levelId, String status) {
+    public List<SpecialistResponse> searchSpecialists(String keyword, Long categoryId, Long levelId, String status, boolean onlyAvailable) {
         List<Specialist> specialists;
 
-        if (categoryId != null && levelId != null && status != null) {
-            specialists = specialistRepository.findByCategory_CategoryIdAndLevel_LevelIdAndStatus(
-                    categoryId, levelId, SpecialistStatus.valueOf(status.toUpperCase()));
-        } else if (categoryId != null && levelId != null) {
-            specialists = specialistRepository.findByCategory_CategoryIdAndLevel_LevelId(categoryId, levelId);
-        } else if (categoryId != null && status != null) {
-            specialists = specialistRepository.findByCategory_CategoryIdAndStatus(
-                    categoryId, SpecialistStatus.valueOf(status.toUpperCase()));
-        } else if (levelId != null && status != null) {
-            specialists = specialistRepository.findByLevel_LevelIdAndStatus(
-                    levelId, SpecialistStatus.valueOf(status.toUpperCase()));
-        } else if (categoryId != null) {
-            specialists = specialistRepository.findByCategory_CategoryId(categoryId);
-        } else if (levelId != null) {
-            specialists = specialistRepository.findByLevel_LevelId(levelId);
-        } else if (status != null) {
-            specialists = specialistRepository.findByStatus(SpecialistStatus.valueOf(status.toUpperCase()));
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            SpecialistStatus specialistStatus = null;
+            if (status != null && !status.trim().isEmpty()) {
+                specialistStatus = SpecialistStatus.valueOf(status.toUpperCase());
+            }
+            specialists = specialistRepository.searchByKeywordWithFilters(
+                    keyword.trim(), categoryId, levelId, specialistStatus, onlyAvailable);
         } else {
-            specialists = specialistRepository.findAll();
+            specialists = performFilterSearch(categoryId, levelId, status, onlyAvailable);
         }
 
         return specialists.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    private List<Specialist> performFilterSearch(Long categoryId, Long levelId, String status, boolean onlyAvailable) {
+        SpecialistStatus specialistStatus = null;
+        if (status != null && !status.trim().isEmpty()) {
+            specialistStatus = SpecialistStatus.valueOf(status.toUpperCase());
+        }
+        return specialistRepository.searchByFiltersOnly(categoryId, levelId, specialistStatus, onlyAvailable);
     }
 
     public SpecialistResponse getSpecialistById(Long id) {
