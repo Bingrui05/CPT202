@@ -41,10 +41,13 @@ public class SpecialistController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<SpecialistResponse>>> searchSpecialists(
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long levelId,
-            @RequestParam(required = false) String status) {
-        List<SpecialistResponse> specialists = specialistService.searchSpecialists(categoryId, levelId, status);
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, defaultValue = "false") Boolean onlyAvailable) {
+        List<SpecialistResponse> specialists = specialistService.searchSpecialists(
+                keyword, categoryId, levelId, status, onlyAvailable != null ? onlyAvailable : false);
         return ResponseEntity.ok(ApiResponse.success("Search completed", specialists));
     }
 }
