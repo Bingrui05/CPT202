@@ -15,6 +15,7 @@ import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +24,10 @@ import java.util.stream.Collectors;
 @Service
 public class AvailabilitySlotService {
 
-    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+    private static final List<BookingStatus> ACTIVE_BOOKING_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, 
+            BookingStatus.CONFIRMED
+    );
 
     private final AvailabilitySlotRepository slotRepository;
     private final SpecialistRepository specialistRepository;
@@ -42,7 +46,23 @@ public class AvailabilitySlotService {
         Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
 
+        // Check if specialist is active
+        if (!specialist.isActive()) {
+            throw new BusinessException("Specialist is not active");
+        }
+
         validateTimeRange(request.getStartTime(), request.getEndTime());
+
+        // Check for overlapping slots
+        List<AvailabilitySlot> overlapping = slotRepository.findOverlappingSlotsForCreate(
+                specialist.getSpecialistId(), 
+                request.getDate(), 
+                request.getStartTime(), 
+                request.getEndTime());
+        
+        if (!overlapping.isEmpty()) {
+            throw new BusinessException("Slot time overlaps with an existing slot for this specialist");
+        }
 
         SlotStatus status = request.getStatus() != null ? request.getStatus() : SlotStatus.AVAILABLE;
 
@@ -81,15 +101,26 @@ public class AvailabilitySlotService {
             slot.setSpecialist(specialist);
         }
 
-        if (request.getDate() != null) {
-            slot.setDate(request.getDate());
-        }
-
+        LocalDate date = request.getDate() != null ? request.getDate() : slot.getDate();
         LocalTime startTime = request.getStartTime() != null ? request.getStartTime() : slot.getStartTime();
         LocalTime endTime = request.getEndTime() != null ? request.getEndTime() : slot.getEndTime();
 
-        if (request.getStartTime() != null || request.getEndTime() != null) {
+        if (request.getStartTime() != null || request.getEndTime() != null || request.getDate() != null) {
             validateTimeRange(startTime, endTime);
+            
+            // Check for overlapping slots (excluding current slot)
+            List<AvailabilitySlot> overlapping = slotRepository.findOverlappingSlots(
+                    slot.getSpecialist().getSpecialistId(),
+                    date,
+                    startTime,
+                    endTime,
+                    slotId);
+            
+            if (!overlapping.isEmpty()) {
+                throw new BusinessException("Slot time overlaps with an existing slot for this specialist");
+            }
+            
+            slot.setDate(date);
             slot.setStartTime(startTime);
             slot.setEndTime(endTime);
         }
@@ -107,8 +138,17 @@ public class AvailabilitySlotService {
         AvailabilitySlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
+        // Cannot delete a booked slot
         if (slot.getStatus() == SlotStatus.BOOKED) {
-            throw new BusinessException("Cannot delete a booked slot");
+            throw new BusinessException("Booked slot cannot be deactivated");
+        }
+
+        // Check if slot has active bookings
+        boolean hasActiveBookings = bookingRepository.existsBySlot_SlotIdAndStatusIn(
+                slotId, ACTIVE_BOOKING_STATUSES);
+
+        if (hasActiveBookings) {
+            throw new BusinessException("Slot is occupied by an active booking and cannot be deactivated");
         }
 
         slot.setStatus(SlotStatus.UNAVAILABLE);
@@ -118,7 +158,7 @@ public class AvailabilitySlotService {
     public List<SlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
         return slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE)
                 .stream()
-                .filter(slot -> !bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES))
+                .filter(slot -> !bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_BOOKING_STATUSES))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

@@ -22,21 +22,44 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
-    private final OperationManagerRepository operationManagerRepository;
     private final SpecialistRepository specialistRepository;
+    private final OperationManagerRepository operationManagerRepository;
 
     public AuthService(UserRepository userRepository,
-                       CustomerRepository customerRepository,
-                       OperationManagerRepository operationManagerRepository,
-                       SpecialistRepository specialistRepository) {
+                      CustomerRepository customerRepository,
+                      SpecialistRepository specialistRepository,
+                      OperationManagerRepository operationManagerRepository) {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
-        this.operationManagerRepository = operationManagerRepository;
         this.specialistRepository = specialistRepository;
+        this.operationManagerRepository = operationManagerRepository;
     }
 
     @Transactional
     public User register(RegisterRequest request) {
+        // Validate registration input
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (request.getUsername().length() < 3) {
+            throw new IllegalArgumentException("Username must be at least 3 characters long");
+        }
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (request.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters long");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (!request.getEmail().contains("@") || !request.getEmail().contains(".")) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        if (request.getRole() == null) {
+            throw new IllegalArgumentException("Role is required");
+        }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BusinessException("Username already exists");
         }
@@ -71,6 +94,13 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new BusinessException("Invalid username or password"));
 
@@ -82,19 +112,31 @@ public class AuthService {
             throw new BusinessException("Account is inactive");
         }
 
-        Long customerId = user.getRole() == UserRole.CUSTOMER
-                ? customerRepository.findByUser_UserId(user.getUserId()).map(Customer::getCustomerId).orElse(null)
-                : null;
-        Long specialistId = user.getRole() == UserRole.SPECIALIST
-                ? specialistRepository.findByUser_UserId(user.getUserId()).map(Specialist::getSpecialistId).orElse(null)
-                : null;
-        Long managerId = user.getRole() == UserRole.MANAGER
-                ? operationManagerRepository.findByUser_UserId(user.getUserId()).map(OperationManager::getManagerId).orElse(null)
-                : null;
+        Long customerId = null;
+        Long specialistId = null;
+        Long managerId = null;
+
+        if (user.getRole() == UserRole.CUSTOMER) {
+            Customer customer = customerRepository.findByUser_UserId(user.getUserId()).orElse(null);
+            if (customer != null) {
+                customerId = customer.getCustomerId();
+            }
+        } else if (user.getRole() == UserRole.SPECIALIST) {
+            Specialist specialist = specialistRepository.findByUser_UserId(user.getUserId()).orElse(null);
+            if (specialist != null) {
+                specialistId = specialist.getSpecialistId();
+            }
+        } else if (user.getRole() == UserRole.MANAGER) {
+            OperationManager manager = operationManagerRepository.findByUser_UserId(user.getUserId()).orElse(null);
+            if (manager != null) {
+                managerId = manager.getManagerId();
+            }
+        }
 
         return LoginResponse.builder()
                 .userId(user.getUserId())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .role(user.getRole())
                 .customerId(customerId)
                 .specialistId(specialistId)

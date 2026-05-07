@@ -26,7 +26,10 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
-    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, 
+            BookingStatus.CONFIRMED
+    );
 
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
@@ -63,7 +66,7 @@ public class BookingService {
         }
 
         if (bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
-            throw new BusinessException("This slot is already occupied by a pending or confirmed booking");
+            throw new BusinessException("Slot is already occupied by an active booking");
         }
 
         Booking booking = Booking.builder()
@@ -135,6 +138,9 @@ public class BookingService {
         }
 
         AvailabilitySlot slot = booking.getSlot();
+        slot.setStatus(SlotStatus.AVAILABLE);
+        slotRepository.save(slot);
+
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
@@ -172,7 +178,7 @@ public class BookingService {
         }
 
         if (bookingRepository.existsBySlot_SlotIdAndStatusIn(newSlot.getSlotId(), ACTIVE_STATUSES)) {
-            throw new BusinessException("This slot is already occupied by a pending or confirmed booking");
+            throw new BusinessException("New slot is already occupied by an active booking");
         }
 
         AvailabilitySlot oldSlot = booking.getSlot();
@@ -228,6 +234,9 @@ public class BookingService {
                 .specialistName(booking.getSpecialist().getUser().getUsername())
                 .slotId(booking.getSlot().getSlotId())
                 .slotDateTime(booking.getSlot().getDate().atTime(booking.getSlot().getStartTime()))
+                .slotDate(booking.getSlot().getDate())
+                .slotStartTime(booking.getSlot().getStartTime())
+                .slotEndTime(booking.getSlot().getEndTime())
                 .topic(booking.getTopic())
                 .notes(booking.getNotes())
                 .status(booking.getStatus())
