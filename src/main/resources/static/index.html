@@ -7,444 +7,507 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Top Header -->
+    <header class="app-header">
+        <div class="header-brand">
+            <h1>Consultation Booking System</h1>
+        </div>
+        <div id="user-panel" class="header-user hidden">
+            <span id="header-user-info"></span>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+    </header>
+
     <div class="container">
-        <h1>Consultation Booking System</h1>
-        
-        <!-- Demo Login Section -->
-        <div id="demo-section" class="section">
-            <h2>Demo Login</h2>
-            <p>After login, the system uses the current user's linked profile ID automatically. Users do not need to manually enter database IDs.</p>
-            
-            <div class="demo-buttons">
-                <button onclick="demoLogin('CUSTOMER')">Login as Customer</button>
-                <button onclick="demoLogin('SPECIALIST')">Login as Specialist</button>
-                <button onclick="demoLogin('MANAGER')">Login as Manager</button>
-            </div>
-            
-            <div class="divider">or</div>
-            
-            <h3>Login</h3>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="login-username" required>
+        <!-- Login/Register Section (Before Login) -->
+        <section id="demo-section" class="section">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <h2>Welcome</h2>
+                    <p class="auth-desc">Please login or register to continue.</p>
+                    
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" id="login-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="login-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="login-password" required>
-                </div>
-                <button type="submit">Login</button>
-            </form>
-            
-            <div class="divider">or</div>
-            
-            <h3>Register</h3>
-            <form id="register-form">
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="reg-username" required>
-                </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="reg-email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="reg-password" required>
-                </div>
-                <div class="form-group">
-                    <label>Address:</label>
-                    <input type="text" id="reg-address">
-                </div>
-                <div class="form-group">
-                    <label>Role:</label>
-                    <select id="reg-role" required>
-                        <option value="CUSTOMER">Customer</option>
-                        <option value="SPECIALIST">Specialist</option>
-                        <option value="MANAGER">Manager</option>
-                    </select>
-                </div>
-                <button type="submit">Register</button>
-            </form>
-        </div>
-        
-        <!-- Current User Panel -->
-        <div id="user-panel" class="section hidden">
-            <h2>Current User</h2>
-            <div id="user-info"></div>
-            <button onclick="logout()">Logout</button>
-        </div>
-        
-        <!-- Customer Section -->
-        <div id="customer-section" class="section hidden">
-            <h2>Customer Portal</h2>
-            
-            <div id="customer-profile-warning" class="subsection hidden" style="background-color: #f5f5f5; border: 2px solid red;">
-                <h3 style="color: red;">Customer Profile Warning</h3>
-                <p id="customer-warning-text" style="color: red;"></p>
-            </div>
-            
-            <!-- Browse Specialists -->
-            <div class="subsection">
-                <h3>Browse Specialists</h3>
-                <div class="form-group">
-                    <label>Search keyword:</label>
-                    <input type="text" id="search-keyword" placeholder="Search specialists...">
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" id="search-only-available"> Only show specialists with available slots</label>
-                </div>
-                <button onclick="searchSpecialists()">Load Specialists</button>
-                <div id="specialists-list"></div>
-            </div>
-            
-            <!-- Selected Specialist -->
-            <div class="subsection hidden" id="selected-specialist-section">
-                <h3>Selected Specialist</h3>
-                <div id="selected-specialist"></div>
-                <h4>Available Slots</h4>
-                <div id="available-slots-list"></div>
-            </div>
-            
-            <!-- Selected Slot -->
-            <div class="subsection hidden" id="selected-slot-section">
-                <h3>Selected Slot</h3>
-                <div id="selected-slot"></div>
                 
-                <h4>Create Booking</h4>
-                <form id="booking-form">
-                    <div class="form-group">
-                        <label>Topic:</label>
-                        <input type="text" id="booking-topic" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Notes:</label>
-                        <textarea id="booking-notes" rows="3"></textarea>
-                    </div>
-                    <button type="submit">Create Booking</button>
-                </form>
-                <div id="booking-result"></div>
+                <div class="auth-box">
+                    <h2>Register</h2>
+                    <form id="register-form" class="auth-form">
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" id="reg-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" id="reg-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="reg-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address:</label>
+                            <input type="text" id="reg-address">
+                        </div>
+                        <div class="form-group">
+                            <label>Role:</label>
+                            <select id="reg-role" required>
+                                <option value="CUSTOMER">Customer</option>
+                                <option value="SPECIALIST">Specialist</option>
+                                <option value="MANAGER">Manager</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Register</button>
+                    </form>
+                </div>
             </div>
             
-            <!-- My Bookings -->
-            <div class="subsection">
-                <h3>My Bookings</h3>
-                <button onclick="loadMyBookings()">Load My Bookings</button>
-                <div id="my-bookings-list"></div>
+            <!-- Demo Access Section (Collapsible) -->
+            <div class="demo-access-section">
+                <button class="demo-access-toggle" onclick="toggleDemoAccess()">
+                    <span id="demo-toggle-text">Demo Access for Assessment</span>
+                    <span class="toggle-icon" id="demo-toggle-icon">▼</span>
+                </button>
+                <div class="demo-access-content" id="demo-access-content">
+                    <p class="demo-access-desc">Quick login for testing without registration:</p>
+                    <div class="demo-buttons">
+                        <button onclick="demoLogin('CUSTOMER')" class="btn-demo-outline">Customer</button>
+                        <button onclick="demoLogin('SPECIALIST')" class="btn-demo-outline">Specialist</button>
+                        <button onclick="demoLogin('MANAGER')" class="btn-demo-outline">Manager</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Customer Section -->
+        <section id="customer-section" class="section hidden">
+            <div class="section-header">
+                <h2>Customer Dashboard</h2>
+            </div>
+            
+            <!-- Customer Profile Warning -->
+            <div id="customer-profile-warning" class="alert alert-error hidden">
+                <strong>Warning:</strong> <span id="customer-warning-text"></span>
+            </div>
+            
+            <!-- Section Messages -->
+            <div id="customer-messages" class="section-messages"></div>
+            
+            <div class="customer-layout">
+                <!-- Left: Specialist Search & Selection -->
+                <div class="customer-main">
+                    <!-- Search Specialists -->
+                    <div class="card">
+                        <h3>Find a Specialist</h3>
+                        <div class="search-form">
+                            <input type="text" id="search-keyword" placeholder="Search by name or keyword...">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="search-only-available"> Only available specialists
+                            </label>
+                            <button onclick="searchSpecialists()" class="btn-search">Search</button>
+                        </div>
+                        <div id="specialists-list" class="specialist-cards"></div>
+                    </div>
+                    
+                    <!-- My Bookings -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>My Bookings</h3>
+                            <button onclick="loadMyBookings()" class="btn-small">Refresh</button>
+                        </div>
+                        <div id="my-bookings-list" class="bookings-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Right: Selection & Booking -->
+                <div class="customer-sidebar">
+                    <!-- Selected Specialist -->
+                    <div id="selected-specialist-section" class="card hidden">
+                        <h3>Selected Specialist</h3>
+                        <div id="selected-specialist"></div>
+                        
+                        <!-- Available Slots by Date -->
+                        <div id="available-slots-section">
+                            <h4>Available Time Slots</h4>
+                            <div id="available-slots-list" class="slots-grid"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Booking Form -->
+                    <div id="selected-slot-section" class="card hidden">
+                        <h3>Book Consultation</h3>
+                        <div id="booking-summary"></div>
+                        
+                        <form id="booking-form" class="booking-form">
+                            <div class="form-group">
+                                <label>Topic:</label>
+                                <input type="text" id="booking-topic" placeholder="What is the consultation about?" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes:</label>
+                                <textarea id="booking-notes" rows="3" placeholder="Additional notes..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary btn-block">Confirm Booking</button>
+                        </form>
+                        <div id="booking-result"></div>
+                    </div>
+                </div>
             </div>
             
             <!-- Reschedule Section -->
-            <div class="subsection hidden" id="reschedule-section">
+            <div id="reschedule-section" class="card hidden">
                 <h3>Reschedule Booking</h3>
-                <p>Select a new available slot for the same specialist:</p>
-                <div id="reschedule-slots"></div>
-                <button onclick="confirmReschedule()">Confirm Reschedule</button>
+                <p>Select a new available slot:</p>
+                <div id="reschedule-slots" class="slots-grid"></div>
+                <button onclick="confirmReschedule()" class="btn-primary">Confirm Reschedule</button>
+                <button onclick="cancelReschedule()" class="btn-secondary">Cancel</button>
                 <div id="reschedule-result"></div>
             </div>
-        </div>
-        
+        </section>
+
         <!-- Specialist Section -->
-        <div id="specialist-section" class="section hidden">
-            <h2>Specialist Portal</h2>
-            <div id="specialist-warning" class="hidden"></div>
+        <section id="specialist-section" class="section hidden">
+            <div class="section-header">
+                <h2>Specialist Dashboard</h2>
+            </div>
+            
+            <div id="specialist-warning" class="alert alert-error hidden"></div>
             
             <div id="specialist-content" class="hidden">
-                <h3>My Schedule</h3>
-                <button onclick="loadMySchedule()">Load My Schedule</button>
-                <div id="specialist-bookings"></div>
-            </div>
-        </div>
-        
-        <!-- Manager Section -->
-        <div id="manager-section" class="section hidden">
-            <h2>Manager Portal</h2>
-            
-            <!-- Booking Management -->
-            <div class="subsection">
-                <h3>Booking Management</h3>
-                <button onclick="loadAllBookings()">Load All Bookings</button>
-                <div id="all-bookings-list"></div>
-            </div>
-            
-            <!-- Category CRUD -->
-            <div class="subsection">
-                <h3>Expertise Categories</h3>
-                <button onclick="loadCategories()">Load Categories</button>
-                <div id="categories-list"></div>
+                <div class="section-messages" id="specialist-messages"></div>
                 
-                <h4>Create Category</h4>
-                <form id="create-category-form">
-                    <div class="form-group">
-                        <label>Name:</label>
-                        <input type="text" id="cat-name" required>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>My Schedule</h3>
+                        <button onclick="loadMySchedule()" class="btn-small">Refresh</button>
                     </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="cat-status">
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                        </select>
-                    </div>
-                    <button type="submit">Create</button>
-                </form>
-                
-                <h4>Update Category</h4>
-                <form id="update-category-form">
-                    <div class="form-group">
-                        <label>Category ID:</label>
-                        <input type="number" id="update-cat-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Name:</label>
-                        <input type="text" id="update-cat-name">
-                    </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="update-cat-status">
-                            <option value="">Keep current</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                        </select>
-                    </div>
-                    <button type="submit">Update</button>
-                </form>
-            </div>
-            
-            <!-- Specialist CRUD -->
-            <div class="subsection">
-                <h3>Specialists</h3>
-                <button onclick="loadAllSpecialistsAdmin()">Load All Specialists</button>
-                <div id="admin-specialists-list"></div>
-                
-                <h4>Create Specialist</h4>
-                <form id="create-specialist-form">
-                    <div class="form-group">
-                        <label>User ID:</label>
-                        <input type="number" id="sp-user-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category ID:</label>
-                        <input type="number" id="sp-category-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Level ID:</label>
-                        <input type="number" id="sp-level-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Fee:</label>
-                        <input type="number" step="0.01" id="sp-fee" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="sp-status">
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Information:</label>
-                        <textarea id="sp-information" rows="3"></textarea>
-                    </div>
-                    <button type="submit">Create</button>
-                </form>
-                
-                <h4>Update Specialist</h4>
-                <form id="update-specialist-form">
-                    <div class="form-group">
-                        <label>Specialist ID:</label>
-                        <input type="number" id="update-sp-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category ID:</label>
-                        <input type="number" id="update-sp-cat">
-                    </div>
-                    <div class="form-group">
-                        <label>Level ID:</label>
-                        <input type="number" id="update-sp-level">
-                    </div>
-                    <div class="form-group">
-                        <label>Fee:</label>
-                        <input type="number" step="0.01" id="update-sp-fee">
-                    </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="update-sp-status">
-                            <option value="">Keep current</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Information:</label>
-                        <textarea id="update-sp-info" rows="3"></textarea>
-                    </div>
-                    <button type="submit">Update</button>
-                </form>
-            </div>
-            
-            <!-- Slot CRUD -->
-            <div class="subsection">
-                <h3>Availability Slots</h3>
-                <div class="form-group">
-                    <label>Specialist ID:</label>
-                    <input type="number" id="slot-specialist-id" placeholder="Enter specialist ID">
+                    <div id="specialist-bookings" class="schedule-table"></div>
                 </div>
-                <button onclick="loadSlotsBySpecialist()">Load Slots</button>
-                <button onclick="loadAvailableSlotsBySpecialist()">Load Available Slots</button>
-                <div id="slots-list"></div>
-                
-                <h4>Create Slot</h4>
-                <form id="create-slot-form">
-                    <div class="form-group">
-                        <label>Specialist ID:</label>
-                        <input type="number" id="slot-specialist-id-create" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Date:</label>
-                        <input type="date" id="slot-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Start Time:</label>
-                        <input type="time" id="slot-start" required>
-                    </div>
-                    <div class="form-group">
-                        <label>End Time:</label>
-                        <input type="time" id="slot-end" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="slot-status">
-                            <option value="AVAILABLE">Available</option>
-                            <option value="UNAVAILABLE">Unavailable</option>
-                        </select>
-                    </div>
-                    <button type="submit">Create</button>
-                </form>
-                
-                <h4>Update Slot</h4>
-                <form id="update-slot-form">
-                    <div class="form-group">
-                        <label>Slot ID:</label>
-                        <input type="number" id="update-slot-id" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Specialist ID:</label>
-                        <input type="number" id="update-slot-specialist">
-                    </div>
-                    <div class="form-group">
-                        <label>Date:</label>
-                        <input type="date" id="update-slot-date">
-                    </div>
-                    <div class="form-group">
-                        <label>Start Time:</label>
-                        <input type="time" id="update-slot-start">
-                    </div>
-                    <div class="form-group">
-                        <label>End Time:</label>
-                        <input type="time" id="update-slot-end">
-                    </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select id="update-slot-status">
-                            <option value="">Keep current</option>
-                            <option value="AVAILABLE">Available</option>
-                            <option value="BOOKED">Booked</option>
-                            <option value="UNAVAILABLE">Unavailable</option>
-                        </select>
-                    </div>
-                    <button type="submit">Update</button>
-                </form>
+            </div>
+        </section>
+
+        <!-- Manager Section -->
+        <section id="manager-section" class="section hidden">
+            <div class="section-header">
+                <h2>Manager Dashboard</h2>
             </div>
             
-            <!-- Master Data Overview -->
-            <div class="subsection">
-                <h3>Master Data Overview</h3>
-                <button onclick="loadLevels()">Load Levels</button>
-                <div id="levels-list"></div>
+            <div class="section-messages" id="manager-messages"></div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showManagerTab('bookings')">Bookings</button>
+                <button class="tab-btn" onclick="showManagerTab('categories')">Categories</button>
+                <button class="tab-btn" onclick="showManagerTab('specialists')">Specialists</button>
+                <button class="tab-btn" onclick="showManagerTab('slots')">Slots</button>
+                <button class="tab-btn" onclick="showManagerTab('levels')">Levels</button>
             </div>
-        </div>
-        
-        <!-- Demo Workflow Guide -->
-        <div class="section">
-            <h2>Demo Workflow Guide</h2>
-            <div class="guide">
-                <h3>Customer:</h3>
-                <ol>
-                    <li>Login as customer.</li>
-                    <li>Search specialists by keyword or available-only.</li>
-                    <li>Select a specialist.</li>
-                    <li>Select an available slot.</li>
-                    <li>Enter topic/notes.</li>
-                    <li>Create booking.</li>
-                    <li>Check price and PENDING status.</li>
-                </ol>
+            
+            <!-- Tab: Bookings -->
+            <div id="tab-bookings" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>All Bookings</h3>
+                        <button onclick="loadAllBookings()" class="btn-small">Refresh</button>
+                    </div>
+                    <div id="all-bookings-list"></div>
+                </div>
+            </div>
+            
+            <!-- Tab: Categories -->
+            <div id="tab-categories" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Expertise Categories</h3>
+                        <button onclick="loadCategories()" class="btn-small">Refresh</button>
+                    </div>
+                    <div id="categories-list"></div>
+                </div>
                 
-                <h3>Manager:</h3>
-                <ol>
-                    <li>Login as manager.</li>
-                    <li>Load all bookings.</li>
-                    <li>Confirm booking.</li>
-                    <li>Manage categories, specialists, and slots.</li>
-                </ol>
+                <div class="forms-row">
+                    <div class="card">
+                        <h3>Create Category</h3>
+                        <form id="create-category-form">
+                            <div class="form-group">
+                                <label>Name:</label>
+                                <input type="text" id="cat-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="cat-status">
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">Create</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Update Category</h3>
+                        <form id="update-category-form">
+                            <div class="form-group">
+                                <label>Category ID:</label>
+                                <input type="number" id="update-cat-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Name:</label>
+                                <input type="text" id="update-cat-name">
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="update-cat-status">
+                                    <option value="">Keep current</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">Update</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Specialists -->
+            <div id="tab-specialists" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>All Specialists</h3>
+                        <button onclick="loadAllSpecialistsAdmin()" class="btn-small">Refresh</button>
+                    </div>
+                    <div id="admin-specialists-list"></div>
+                </div>
                 
-                <h3>Customer (after manager confirms):</h3>
-                <ol>
-                    <li>Load my bookings.</li>
-                    <li>Reschedule if needed.</li>
-                    <li>Wait for manager to confirm again.</li>
-                </ol>
+                <div class="forms-row">
+                    <div class="card">
+                        <h3>Create Specialist</h3>
+                        <form id="create-specialist-form">
+                            <div class="form-group">
+                                <label>User ID:</label>
+                                <input type="number" id="sp-user-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Category ID:</label>
+                                <input type="number" id="sp-category-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Level ID:</label>
+                                <input type="number" id="sp-level-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fee:</label>
+                                <input type="number" step="0.01" id="sp-fee" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="sp-status">
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Information:</label>
+                                <textarea id="sp-information" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Create</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Update Specialist</h3>
+                        <form id="update-specialist-form">
+                            <div class="form-group">
+                                <label>Specialist ID:</label>
+                                <input type="number" id="update-sp-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Category ID:</label>
+                                <input type="number" id="update-sp-cat">
+                            </div>
+                            <div class="form-group">
+                                <label>Level ID:</label>
+                                <input type="number" id="update-sp-level">
+                            </div>
+                            <div class="form-group">
+                                <label>Fee:</label>
+                                <input type="number" step="0.01" id="update-sp-fee">
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="update-sp-status">
+                                    <option value="">Keep current</option>
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="INACTIVE">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Information:</label>
+                                <textarea id="update-sp-info" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Update</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Slots -->
+            <div id="tab-slots" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Availability Slots</h3>
+                        <div class="slot-header-actions">
+                            <input type="number" id="slot-specialist-id" placeholder="Specialist ID">
+                            <button onclick="loadSlotsBySpecialist()" class="btn-small">Load All</button>
+                            <button onclick="loadAvailableSlotsBySpecialist()" class="btn-small">Load Available</button>
+                        </div>
+                    </div>
+                    <div id="slots-list"></div>
+                </div>
                 
-                <h3>Specialist:</h3>
-                <ol>
-                    <li>Login as specialist.</li>
-                    <li>Load my schedule.</li>
-                    <li>Complete confirmed booking.</li>
-                </ol>
+                <div class="forms-row">
+                    <div class="card">
+                        <h3>Create Slot</h3>
+                        <form id="create-slot-form">
+                            <div class="form-group">
+                                <label>Specialist ID:</label>
+                                <input type="number" id="slot-specialist-id-create" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date:</label>
+                                <input type="date" id="slot-date" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Start:</label>
+                                    <input type="time" id="slot-start" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>End:</label>
+                                    <input type="time" id="slot-end" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="slot-status">
+                                    <option value="AVAILABLE">Available</option>
+                                    <option value="UNAVAILABLE">Unavailable</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">Create</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Update Slot</h3>
+                        <form id="update-slot-form">
+                            <div class="form-group">
+                                <label>Slot ID:</label>
+                                <input type="number" id="update-slot-id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Specialist ID:</label>
+                                <input type="number" id="update-slot-specialist">
+                            </div>
+                            <div class="form-group">
+                                <label>Date:</label>
+                                <input type="date" id="update-slot-date">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Start:</label>
+                                    <input type="time" id="update-slot-start">
+                                </div>
+                                <div class="form-group">
+                                    <label>End:</label>
+                                    <input type="time" id="update-slot-end">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="update-slot-status">
+                                    <option value="">Keep current</option>
+                                    <option value="AVAILABLE">Available</option>
+                                    <option value="BOOKED">Booked</option>
+                                    <option value="UNAVAILABLE">Unavailable</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">Update</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
+            
+            <!-- Tab: Levels -->
+            <div id="tab-levels" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Specialist Levels</h3>
+                        <button onclick="loadLevels()" class="btn-small">Refresh</button>
+                    </div>
+                    <div id="levels-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Debug Panel (Collapsible) -->
+        <section id="debug-section" class="section">
+            <button onclick="toggleDebugPanel()" class="debug-toggle" id="debug-toggle">
+                <span id="debug-toggle-text">Show Debug Info</span>
+            </button>
+            <div id="debug-content" class="debug-content hidden">
+                <div class="debug-grid">
+                    <div class="debug-item">
+                        <strong>Current User:</strong>
+                        <pre id="debug-user"></pre>
+                    </div>
+                    <div class="debug-item">
+                        <strong>Selected Specialist:</strong>
+                        <pre id="debug-specialist"></pre>
+                    </div>
+                    <div class="debug-item">
+                        <strong>Selected Slot:</strong>
+                        <pre id="debug-slot"></pre>
+                    </div>
+                    <div class="debug-item">
+                        <strong>Selected Booking:</strong>
+                        <pre id="debug-booking"></pre>
+                    </div>
+                </div>
+                <div class="debug-grid">
+                    <div class="debug-item">
+                        <strong>Last API Method:</strong>
+                        <span id="debug-method"></span>
+                    </div>
+                    <div class="debug-item">
+                        <strong>Last API URL:</strong>
+                        <pre id="debug-url"></pre>
+                    </div>
+                    <div class="debug-item full-width">
+                        <strong>Last Request Body:</strong>
+                        <pre id="debug-request"></pre>
+                    </div>
+                    <div class="debug-item full-width">
+                        <strong>Last Response:</strong>
+                        <pre id="debug-response"></pre>
+                    </div>
+                    <div class="debug-item full-width">
+                        <strong>Error:</strong>
+                        <pre id="debug-error"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
         
-        <!-- Debug Panel -->
-        <div class="section" id="debug-section">
-            <h2>Debug Panel</h2>
-            <div class="debug-item">
-                <strong>Current User:</strong>
-                <pre id="debug-user"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Selected Specialist:</strong>
-                <pre id="debug-specialist"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Selected Slot:</strong>
-                <pre id="debug-slot"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Selected Booking:</strong>
-                <pre id="debug-booking"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Last API Method:</strong>
-                <span id="debug-method"></span>
-            </div>
-            <div class="debug-item">
-                <strong>Last API URL:</strong>
-                <pre id="debug-url"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Last Request Body:</strong>
-                <pre id="debug-request"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Last Response:</strong>
-                <pre id="debug-response"></pre>
-            </div>
-            <div class="debug-item">
-                <strong>Error:</strong>
-                <pre id="debug-error"></pre>
-            </div>
-        </div>
-        
-        <!-- Messages -->
+        <!-- Global Messages -->
         <div id="messages"></div>
     </div>
     

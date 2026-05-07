@@ -11,6 +11,17 @@ const demoCredentials = {
     MANAGER: { username: 'manager1', password: 'password123' }
 };
 
+// Utility: Escape HTML to prevent XSS
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // DOM elements
 const demoSection = document.getElementById('demo-section');
 const userPanel = document.getElementById('user-panel');
@@ -46,19 +57,160 @@ function showSection() {
         if (currentUser.role === 'CUSTOMER') {
             customerSection.classList.remove('hidden');
             updateCustomerWarning();
+            initializeCustomerDashboard();
         } else if (currentUser.role === 'SPECIALIST') {
             specialistSection.classList.remove('hidden');
             checkSpecialistProfile();
+            loadMySchedule();
         } else if (currentUser.role === 'MANAGER') {
             managerSection.classList.remove('hidden');
+            showManagerTab('bookings');
+            loadAllBookings();
         }
     } else {
         demoSection.classList.remove('hidden');
+        resetDemoAccessSection();
         userPanel.classList.add('hidden');
         customerSection.classList.add('hidden');
         specialistSection.classList.add('hidden');
         managerSection.classList.add('hidden');
     }
+}
+
+// Initialize customer dashboard data
+function initializeCustomerDashboard() {
+    if (currentUser.customerId) {
+        loadMyBookings();
+    }
+    loadSpecialists();
+}
+
+// Load specialists for customer booking
+async function loadSpecialists() {
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialists');
+    
+    try {
+        var response = await fetch('/api/specialists');
+        var data = await response.json();
+        setDebugResponse(data);
+        
+        if (response.ok && data.success) {
+            displaySpecialistsForBooking(data.data);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading specialists: ' + error.message);
+    }
+}
+
+// Display specialists for booking selection
+function displaySpecialistsForBooking(specialists) {
+    var list = document.getElementById('specialists-list');
+    if (!list) return;
+    
+    if (!specialists || specialists.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No specialists found.</p></div>';
+        return;
+    }
+    
+    var html = '';
+    specialists.forEach(function(s) {
+        if (!s || !s.specialistId) return;
+        
+        var displayName = getSpecialistDisplayName(s);
+        var categoryName = getCategoryName(s);
+        var levelName = getLevelName(s);
+        var fee = s.fee || s.price || s.consultationFee || 0;
+        
+        var onclickName = escapeHtml(displayName).replace(/'/g, "\\'");
+        html += '<div class="specialist-card" onclick="selectSpecialistForBooking(' + s.specialistId + ', \'' + onclickName + '\', ' + fee + ')">';
+        html += '<h4>' + escapeHtml(displayName) + '</h4>';
+        html += '<p>Category: ' + escapeHtml(categoryName) + '</p>';
+        html += '<p>Level: ' + escapeHtml(levelName) + '</p>';
+        html += '<p class="price">$' + fee + '</p>';
+        html += '</div>';
+    });
+    list.innerHTML = html;
+}
+
+// Get specialist display name with safe fallback
+function getSpecialistDisplayName(specialist) {
+    return specialist?.username
+        || specialist?.specialistName
+        || specialist?.name
+        || specialist?.user?.username
+        || 'Unknown Specialist';
+}
+
+// Get category name with safe fallback
+function getCategoryName(specialist) {
+    return specialist?.categoryName
+        || (specialist?.category && (specialist.category.name || specialist.category))
+        || specialist?.category
+        || '-';
+}
+
+// Get level name with safe fallback
+function getLevelName(specialist) {
+    return specialist?.levelName
+        || (specialist?.level && (specialist.level.name || specialist.level))
+        || specialist?.level
+        || '-';
+}
+
+// Show manager tab and load data
+function showManagerTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(function(tab) {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    var tab = document.getElementById('tab-' + tabName);
+    if (tab) {
+        tab.classList.add('active');
+    }
+    
+    // Activate button
+    var buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(function(btn) {
+        if (btn.textContent.toLowerCase().includes(tabName)) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Load tab data
+    switch (tabName) {
+        case 'bookings':
+            loadAllBookings();
+            break;
+        case 'categories':
+            loadCategories();
+            break;
+        case 'specialists':
+            loadAllSpecialistsAdmin();
+            break;
+        case 'slots':
+            loadAllSpecialistsAdmin();
+            break;
+        case 'levels':
+            loadLevels();
+            break;
+    }
+}
+
+// Update user info in header
+function updateUserInfo() {
+    var userInfo = document.getElementById('header-user-info');
+    var roleLabel = currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase();
+    userInfo.innerHTML = '<strong>' + (currentUser.username || '-') + '</strong> (' + roleLabel + ')';
 }
 
 // Update customer warning
@@ -211,6 +363,20 @@ function logout() {
     showMessage('Logged out');
 }
 
+// Toggle demo access section
+function toggleDemoAccess() {
+    var section = document.querySelector('.demo-access-section');
+    section.classList.toggle('expanded');
+}
+
+// Reset demo access section when showing login
+function resetDemoAccessSection() {
+    var section = document.querySelector('.demo-access-section');
+    if (section) {
+        section.classList.remove('expanded');
+    }
+}
+
 // Check specialist profile
 function checkSpecialistProfile() {
     const warning = document.getElementById('specialist-warning');
@@ -226,29 +392,7 @@ function checkSpecialistProfile() {
     }
 }
 
-// Update user info display
-function updateUserInfo() {
-    const userInfo = document.getElementById('user-info');
-    let info = '<p><strong>Username:</strong> ' + (currentUser.username || '-') + '</p>';
-    info += '<p><strong>Role:</strong> ' + (currentUser.role || '-') + '</p>';
-    info += '<p><strong>User ID:</strong> ' + (currentUser.userId || '-') + '</p>';
-    
-    if (currentUser.role === 'CUSTOMER') {
-        info += '<p><strong>Customer ID:</strong> ' + (currentUser.customerId || '<span style="color:red">NOT LINKED</span>') + '</p>';
-        if (!currentUser.customerId) {
-            info += '<p style="color:red"><strong>ERROR:</strong> This account does not have a linked Customer profile. Booking cannot be created.</p>';
-        }
-    } else if (currentUser.role === 'SPECIALIST') {
-        info += '<p><strong>Specialist ID:</strong> ' + (currentUser.specialistId || '-') + '</p>';
-    } else if (currentUser.role === 'MANAGER') {
-        info += '<p><strong>Manager ID:</strong> ' + (currentUser.managerId || '-') + '</p>';
-    }
-    
-    userInfo.innerHTML = info;
-    setDebugUser(currentUser);
-}
-
-// ============= EXTRACT ERROR MESSAGE HELPER =============
+// Update customer warning
 function extractErrorMessage(data, response) {
     // Handle null/undefined data
     if (!data) {
@@ -367,28 +511,31 @@ function displaySpecialists(specialists) {
     const list = document.getElementById('specialists-list');
     
     if (!specialists || specialists.length === 0) {
-        list.innerHTML = '<p>No specialists found.</p>';
+        list.innerHTML = '<div class="empty-state"><p>No specialists found.</p></div>';
         return;
     }
     
-    let html = '<table><thead><tr>';
-    html += '<th>ID</th><th>Name</th><th>Category</th><th>Level</th><th>Status</th><th>Fee</th><th>Information</th><th>Action</th>';
-    html += '</tr></thead><tbody>';
+    let html = '';
     
     specialists.forEach(function(sp) {
-        html += '<tr>';
-        html += '<td>' + sp.specialistId + '</td>';
-        html += '<td>' + (sp.username || '-') + '</td>';
-        html += '<td>' + (sp.categoryName || '-') + '</td>';
-        html += '<td>' + (sp.levelName || '-') + '</td>';
-        html += '<td>' + sp.status + '</td>';
-        html += '<td>' + (sp.fee || '-') + '</td>';
-        html += '<td>' + (sp.information || '-') + '</td>';
-        html += '<td><button onclick="selectSpecialist(' + sp.specialistId + ')">Select</button></td>';
-        html += '</tr>';
+        var statusClass = sp.status === 'ACTIVE' ? 'status-active' : 'status-inactive';
+        html += '<div class="specialist-card">';
+        html += '<div class="specialist-info">';
+        html += '<h4>' + (sp.username || '-') + '</h4>';
+        html += '<div class="specialist-meta">';
+        html += '<span>' + (sp.categoryName || '-') + '</span>';
+        html += '<span>' + (sp.levelName || '-') + '</span>';
+        html += '<span class="status-badge ' + statusClass + '">' + sp.status + '</span>';
+        html += '</div>';
+        html += '<div class="specialist-fee">$' + (sp.fee || '0.00') + '</div>';
+        if (sp.information) {
+            html += '<p>' + sp.information + '</p>';
+        }
+        html += '</div>';
+        html += '<button onclick="selectSpecialist(' + sp.specialistId + ')" class="btn-primary">Select</button>';
+        html += '</div>';
     });
     
-    html += '</tbody></table>';
     list.innerHTML = html;
 }
 
@@ -435,12 +582,14 @@ function displaySelectedSpecialist() {
     }
     
     section.classList.remove('hidden');
-    div.innerHTML = '<p><strong>Name:</strong> ' + (selectedSpecialist.username || '-') + '</p>' +
-        '<p><strong>Category:</strong> ' + (selectedSpecialist.categoryName || '-') + '</p>' +
-        '<p><strong>Level:</strong> ' + (selectedSpecialist.levelName || '-') + '</p>' +
-        '<p><strong>Fee:</strong> ' + (selectedSpecialist.fee || '-') + '</p>' +
-        '<p><strong>Information:</strong> ' + (selectedSpecialist.information || '-') + '</p>' +
-        '<button onclick="clearSpecialist()">Clear Selection</button>';
+    div.innerHTML = '<div class="specialist-info">' +
+        '<h4>' + (selectedSpecialist.username || '-') + '</h4>' +
+        '<div class="specialist-meta">' +
+        '<span>' + (selectedSpecialist.categoryName || '-') + '</span>' +
+        '<span>' + (selectedSpecialist.levelName || '-') + '</span>' +
+        '</div>' +
+        '<div class="specialist-fee">$' + (selectedSpecialist.fee || '0.00') + ' per consultation</div>' +
+        '</div>';
 }
 
 // Clear specialist selection
@@ -483,27 +632,42 @@ function displayAvailableSlots(slots) {
     const list = document.getElementById('available-slots-list');
     
     if (!slots || slots.length === 0) {
-        list.innerHTML = '<p>No available slots found.</p>';
+        list.innerHTML = '<div class="empty-state"><p>No available slots found.</p></div>';
         return;
     }
     
-    let html = '<table><thead><tr>';
-    html += '<th>ID</th><th>Date</th><th>Start</th><th>End</th><th>Status</th><th>Action</th>';
-    html += '</tr></thead><tbody>';
-    
+    // Group slots by date
+    const slotsByDate = {};
     slots.forEach(function(slot) {
-        html += '<tr>';
-        html += '<td>' + slot.slotId + '</td>';
-        html += '<td>' + slot.date + '</td>';
-        html += '<td>' + slot.startTime + '</td>';
-        html += '<td>' + slot.endTime + '</td>';
-        html += '<td>' + slot.status + '</td>';
-        html += '<td><button onclick="selectSlot(' + slot.slotId + ', \'' + slot.date + '\', \'' + slot.startTime + '\', \'' + slot.endTime + '\')">Select</button></td>';
-        html += '</tr>';
+        const date = slot.date;
+        if (!slotsByDate[date]) {
+            slotsByDate[date] = [];
+        }
+        slotsByDate[date].push(slot);
     });
     
-    html += '</tbody></table>';
+    let html = '';
+    Object.keys(slotsByDate).sort().forEach(function(date) {
+        html += '<div class="slot-date-group">';
+        html += '<div class="slot-date-label">' + date + '</div>';
+        slotsByDate[date].forEach(function(slot) {
+            var timeStr = formatTime(slot.startTime) + ' - ' + formatTime(slot.endTime);
+            var isSelected = selectedSlot && selectedSlot.slotId === slot.slotId;
+            html += '<button class="slot-btn' + (isSelected ? ' selected' : '') + '" ';
+            html += 'onclick="selectSlot(' + slot.slotId + ', \'' + slot.date + '\', \'' + slot.startTime + '\', \'' + slot.endTime + '\')">';
+            html += timeStr + '</button>';
+        });
+        html += '</div>';
+    });
+    
     list.innerHTML = html;
+}
+
+// Format time to HH:MM
+function formatTime(time) {
+    if (!time) return '-';
+    if (time.length > 5) return time.substring(0, 5);
+    return time;
 }
 
 // Select slot
@@ -518,24 +682,31 @@ function selectSlot(slotId, date, startTime, endTime) {
     setDebugSlot(selectedSlot);
     displaySelectedSlot();
     document.getElementById('booking-result').innerHTML = '';
-    showMessage('Slot selected: ' + date + ' ' + startTime + ' - ' + endTime);
 }
 
 // Display selected slot
 function displaySelectedSlot() {
     const section = document.getElementById('selected-slot-section');
-    const div = document.getElementById('selected-slot');
+    const summaryDiv = document.getElementById('booking-summary');
     
-    if (!selectedSlot) {
+    if (!selectedSlot || !selectedSpecialist) {
         section.classList.add('hidden');
         return;
     }
     
     section.classList.remove('hidden');
-    div.innerHTML = '<p><strong>Slot ID:</strong> ' + selectedSlot.slotId + '</p>' +
-        '<p><strong>Date:</strong> ' + selectedSlot.date + '</p>' +
-        '<p><strong>Time:</strong> ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</p>' +
-        '<button onclick="clearSlot()">Clear Selection</button>';
+    
+    // Show booking summary
+    var timeStr = formatTime(selectedSlot.startTime) + ' - ' + formatTime(selectedSlot.endTime);
+    var price = selectedSpecialist.fee ? '$' + parseFloat(selectedSpecialist.fee).toFixed(2) : '$0.00';
+    
+    summaryDiv.innerHTML = '<div class="booking-summary">' +
+        '<div class="booking-summary-item"><strong>Specialist</strong><span>' + (selectedSpecialist.username || '-') + '</span></div>' +
+        '<div class="booking-summary-item"><strong>Category</strong><span>' + (selectedSpecialist.categoryName || '-') + '</span></div>' +
+        '<div class="booking-summary-item"><strong>Date</strong><span>' + selectedSlot.date + '</span></div>' +
+        '<div class="booking-summary-item"><strong>Time</strong><span>' + timeStr + '</span></div>' +
+        '<div class="booking-summary-price">Consultation Fee: ' + price + '</div>' +
+        '</div>';
 }
 
 // Clear slot selection
@@ -716,36 +887,76 @@ function displayMyBookings(bookings) {
     var list = document.getElementById('my-bookings-list');
     
     if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p>No bookings found.</p>';
+        list.innerHTML = '<div class="empty-state"><p>No bookings found.</p></div>';
         return;
     }
     
-    var html = '<table><thead><tr>';
-    html += '<th>ID</th><th>Specialist</th><th>Date</th><th>Time</th><th>Topic</th><th>Status</th><th>Price</th><th>Action</th>';
-    html += '</tr></thead><tbody>';
+    var html = '';
     
-    bookings.forEach(function(b) {
-        html += '<tr>';
-        html += '<td>' + b.bookingId + '</td>';
-        html += '<td>' + (b.specialistName || '-') + '</td>';
-        html += '<td>' + (b.slotDate || '-') + '</td>';
-        html += '<td>' + (b.slotStartTime && b.slotEndTime ? b.slotStartTime + ' - ' + b.slotEndTime : '-') + '</td>';
-        html += '<td>' + (b.topic || '-') + '</td>';
-        html += '<td>' + b.status + '</td>';
-        html += '<td>' + (b.price || '-') + '</td>';
-        
-        var actions = '';
-        if (b.status === 'PENDING' || b.status === 'CONFIRMED') {
-            actions += '<button onclick="prepareReschedule(' + b.bookingId + ', ' + b.specialistId + ')">Reschedule</button> ';
-            actions += '<button onclick="cancelBookingCustomer(' + b.bookingId + ')">Cancel</button> ';
-        }
-        actions += '<button onclick="selectBookingForDetails(' + b.bookingId + ', \'' + b.status + '\')">Details</button>';
-        html += '<td>' + actions + '</td>';
-        html += '</tr>';
+    // Sort bookings by date/time descending (most recent first)
+    bookings.sort(function(a, b) {
+        var parsedA = parseSlotDateTime(a);
+        var parsedB = parseSlotDateTime(b);
+        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
+        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
+        return dateB - dateA;
     });
     
-    html += '</tbody></table>';
+    bookings.forEach(function(b) {
+        var formatted = formatBookingDateTime(b);
+        var statusLabel = getStatusLabel(b.status);
+        var statusClass = getStatusClass(b.status);
+        var dateTimeStr = formatted.date + ' ' + formatted.time;
+        
+        html += '<div class="booking-item">';
+        html += '<div class="booking-item-header">';
+        html += '<div class="booking-item-info">';
+        html += '<h4>' + (b.specialistName || '-') + '</h4>';
+        html += '<div class="booking-item-meta">';
+        html += '<span>' + dateTimeStr + '</span>';
+        html += '<span>$' + (b.price || '0.00') + '</span>';
+        html += '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="booking-item-actions">';
+        if (b.status === 'PENDING' || b.status === 'CONFIRMED') {
+            html += '<button onclick="prepareReschedule(' + b.bookingId + ', ' + b.specialistId + ')" class="btn-small">Reschedule</button>';
+            html += '<button onclick="cancelBookingCustomer(' + b.bookingId + ')" class="btn-small">Cancel</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+        if (b.topic) {
+            html += '<p style="font-size:13px;color:#6e6e73;margin-top:8px;"><strong>Topic:</strong> ' + b.topic + '</p>';
+        }
+        if (b.notes) {
+            html += '<p style="font-size:13px;color:#6e6e73;"><strong>Notes:</strong> ' + b.notes + '</p>';
+        }
+        html += '</div>';
+    });
+    
     list.innerHTML = html;
+}
+
+// Get user-friendly status label
+function getStatusLabel(status) {
+    const labels = {
+        'PENDING': 'Waiting for confirmation',
+        'CONFIRMED': 'Confirmed',
+        'COMPLETED': 'Completed',
+        'CANCELLED': 'Cancelled'
+    };
+    return labels[status] || status;
+}
+
+// Get status CSS class
+function getStatusClass(status) {
+    const classes = {
+        'PENDING': 'status-badge-pending',
+        'CONFIRMED': 'status-badge-confirmed',
+        'COMPLETED': 'status-badge-completed',
+        'CANCELLED': 'status-badge-cancelled'
+    };
+    return classes[status] || '';
 }
 
 // Select booking for details
@@ -899,6 +1110,47 @@ async function cancelBookingCustomer(bookingId) {
 
 // ============= SPECIALIST FUNCTIONS =============
 
+// Format booking date/time for display
+function formatBookingDateTime(booking) {
+    var parsed = parseSlotDateTime(booking);
+    var dateStr = parsed.slotDate || '-';
+    var startTimeStr = parsed.slotStartTime ? formatTime(parsed.slotStartTime) : null;
+    var endTimeStr = parsed.slotEndTime ? formatTime(parsed.slotEndTime) : null;
+    
+    var timeStr = '-';
+    if (startTimeStr) {
+        timeStr = startTimeStr;
+        if (endTimeStr) {
+            timeStr += ' - ' + endTimeStr;
+        }
+    }
+    
+    return { date: dateStr, time: timeStr };
+}
+
+// Parse slotDateTime into date and time components
+function parseSlotDateTime(booking) {
+    if (booking.slotDate && booking.slotStartTime) {
+        return {
+            slotDate: booking.slotDate,
+            slotStartTime: booking.slotStartTime,
+            slotEndTime: booking.slotEndTime
+        };
+    }
+    if (booking.slotDateTime) {
+        var dt = booking.slotDateTime;
+        if (typeof dt === 'string') {
+            var parts = dt.split('T');
+            return {
+                slotDate: parts[0],
+                slotStartTime: parts[1] ? parts[1].substring(0, 5) : null,
+                slotEndTime: null
+            };
+        }
+    }
+    return { slotDate: null, slotStartTime: null, slotEndTime: null };
+}
+
 // Load my schedule
 async function loadMySchedule() {
     if (!currentUser || !currentUser.specialistId) {
@@ -931,30 +1183,40 @@ function displaySpecialistBookings(bookings) {
     var list = document.getElementById('specialist-bookings');
     
     if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p>No bookings found.</p>';
+        list.innerHTML = '<div class="empty-state"><p>No bookings found.</p></div>';
         return;
     }
     
     var html = '<table><thead><tr>';
-    html += '<th>ID</th><th>Customer</th><th>Date</th><th>Time</th><th>Topic</th><th>Notes</th><th>Status</th><th>Price</th><th>Action</th>';
+    html += '<th>Date</th><th>Time</th><th>Customer</th><th>Topic</th><th>Status</th><th>Price</th><th>Action</th>';
     html += '</tr></thead><tbody>';
     
+    // Sort by date/time ascending (upcoming first)
+    bookings.sort(function(a, b) {
+        var parsedA = parseSlotDateTime(a);
+        var parsedB = parseSlotDateTime(b);
+        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
+        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
+        return dateA - dateB;
+    });
+    
     bookings.forEach(function(b) {
+        var formatted = formatBookingDateTime(b);
+        var statusLabel = getStatusLabel(b.status);
+        var statusClass = getStatusClass(b.status);
+        
         html += '<tr>';
-        html += '<td>' + b.bookingId + '</td>';
+        html += '<td>' + formatted.date + '</td>';
+        html += '<td>' + formatted.time + '</td>';
         html += '<td>' + (b.customerName || '-') + '</td>';
-        html += '<td>' + (b.slotDate || '-') + '</td>';
-        html += '<td>' + (b.slotStartTime && b.slotEndTime ? b.slotStartTime + ' - ' + b.slotEndTime : '-') + '</td>';
         html += '<td>' + (b.topic || '-') + '</td>';
-        html += '<td>' + (b.notes || '-') + '</td>';
-        html += '<td>' + b.status + '</td>';
-        html += '<td>' + (b.price || '-') + '</td>';
+        html += '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>';
+        html += '<td>$' + (b.price || '0.00') + '</td>';
         
         var actions = '';
         if (b.status === 'CONFIRMED') {
-            actions += '<button onclick="completeBookingSpecialist(' + b.bookingId + ')">Complete</button> ';
+            actions += '<button onclick="completeBookingSpecialist(' + b.bookingId + ')" class="btn-small">Complete</button>';
         }
-        actions += '<button onclick="selectBookingForDetails(' + b.bookingId + ', \'' + b.status + '\')">Details</button>';
         html += '<td>' + actions + '</td>';
         html += '</tr>';
     });
@@ -1022,7 +1284,7 @@ function displayAllBookings(bookings) {
     var list = document.getElementById('all-bookings-list');
     
     if (!bookings || bookings.length === 0) {
-        list.innerHTML = '<p>No bookings found.</p>';
+        list.innerHTML = '<div class="empty-state"><p>No bookings found.</p></div>';
         return;
     }
     
@@ -1030,25 +1292,37 @@ function displayAllBookings(bookings) {
     html += '<th>ID</th><th>Customer</th><th>Specialist</th><th>Date</th><th>Time</th><th>Topic</th><th>Status</th><th>Price</th><th>Action</th>';
     html += '</tr></thead><tbody>';
     
+    // Sort by date/time ascending
+    bookings.sort(function(a, b) {
+        var parsedA = parseSlotDateTime(a);
+        var parsedB = parseSlotDateTime(b);
+        var dateA = new Date((parsedA.slotDate || '1970-01-01') + 'T' + (parsedA.slotStartTime || '00:00'));
+        var dateB = new Date((parsedB.slotDate || '1970-01-01') + 'T' + (parsedB.slotStartTime || '00:00'));
+        return dateA - dateB;
+    });
+    
     bookings.forEach(function(b) {
+        var formatted = formatBookingDateTime(b);
+        var statusLabel = getStatusLabel(b.status);
+        var statusClass = getStatusClass(b.status);
+        
         html += '<tr>';
         html += '<td>' + b.bookingId + '</td>';
         html += '<td>' + (b.customerName || '-') + '</td>';
         html += '<td>' + (b.specialistName || '-') + '</td>';
-        html += '<td>' + (b.slotDate || '-') + '</td>';
-        html += '<td>' + (b.slotStartTime && b.slotEndTime ? b.slotStartTime + ' - ' + b.slotEndTime : '-') + '</td>';
+        html += '<td>' + formatted.date + '</td>';
+        html += '<td>' + formatted.time + '</td>';
         html += '<td>' + (b.topic || '-') + '</td>';
-        html += '<td>' + b.status + '</td>';
-        html += '<td>' + (b.price || '-') + '</td>';
+        html += '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>';
+        html += '<td>$' + (b.price || '0.00') + '</td>';
         
         var actions = '';
         if (b.status === 'PENDING') {
-            actions += '<button onclick="confirmBookingManager(' + b.bookingId + ')">Confirm</button> ';
-            actions += '<button onclick="cancelBookingManager(' + b.bookingId + ')">Cancel</button>';
+            actions += '<button onclick="confirmBookingManager(' + b.bookingId + ')" class="btn-small">Confirm</button> ';
+            actions += '<button onclick="cancelBookingManager(' + b.bookingId + ')" class="btn-small">Cancel</button>';
         } else if (b.status === 'CONFIRMED') {
-            actions += '<button onclick="cancelBookingManager(' + b.bookingId + ')">Cancel</button>';
+            actions += '<button onclick="cancelBookingManager(' + b.bookingId + ')" class="btn-small">Cancel</button>';
         }
-        actions += ' <button onclick="selectBookingForDetails(' + b.bookingId + ', \'' + b.status + '\')">Details</button>';
         html += '<td>' + actions + '</td>';
         html += '</tr>';
     });
@@ -1750,6 +2024,27 @@ function setDebugResponse(response) {
 
 function setDebugError(error) {
     document.getElementById('debug-error').textContent = error;
+}
+
+// Toggle debug panel visibility
+function toggleDebugPanel() {
+    var content = document.getElementById('debug-content');
+    var toggleText = document.getElementById('debug-toggle-text');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        toggleText.textContent = 'Hide Debug Info';
+    } else {
+        content.classList.add('hidden');
+        toggleText.textContent = 'Show Debug Info';
+    }
+}
+
+// Cancel reschedule
+function cancelReschedule() {
+    document.getElementById('reschedule-section').classList.add('hidden');
+    selectedBooking = null;
+    setDebugBooking(null);
 }
 
 function showMessage(message) {

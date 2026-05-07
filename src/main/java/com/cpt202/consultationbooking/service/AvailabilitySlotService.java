@@ -158,6 +158,7 @@ public class AvailabilitySlotService {
     public List<SlotResponse> getAvailableSlotsBySpecialist(Long specialistId) {
         return slotRepository.findBySpecialist_SpecialistIdAndStatus(specialistId, SlotStatus.AVAILABLE)
                 .stream()
+                .filter(slot -> !bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_BOOKING_STATUSES))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

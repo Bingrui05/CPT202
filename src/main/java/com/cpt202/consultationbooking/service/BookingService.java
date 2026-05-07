@@ -116,13 +116,16 @@ public class BookingService {
         }
 
         AvailabilitySlot slot = booking.getSlot();
-        slot.setStatus(SlotStatus.AVAILABLE);
-        slotRepository.save(slot);
-
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            slot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(slot);
+        }
+
+        return toResponse(booking);
     }
 
     @Transactional
@@ -140,8 +143,14 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
+            slot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(slot);
+        }
+
+        return toResponse(booking);
     }
 
     @Transactional
@@ -173,17 +182,20 @@ public class BookingService {
         }
 
         AvailabilitySlot oldSlot = booking.getSlot();
-        oldSlot.setStatus(SlotStatus.AVAILABLE);
-        slotRepository.save(oldSlot);
+        booking.setSlot(newSlot);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setUpdatedAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(oldSlot.getSlotId(), ACTIVE_STATUSES)) {
+            oldSlot.setStatus(SlotStatus.AVAILABLE);
+            slotRepository.save(oldSlot);
+        }
 
         newSlot.setStatus(SlotStatus.BOOKED);
         slotRepository.save(newSlot);
 
-        booking.setSlot(newSlot);
-        booking.setStatus(BookingStatus.PENDING);
-        booking.setUpdatedAt(LocalDateTime.now());
-        Booking saved = bookingRepository.save(booking);
-        return toResponse(saved);
+        return toResponse(booking);
     }
 
     public List<BookingResponse> getBookingsByCustomer(Long customerId) {
