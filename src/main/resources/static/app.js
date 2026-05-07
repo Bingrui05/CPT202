@@ -1096,7 +1096,7 @@ function displayMyBookings(bookings) {
         html += '</div>';
         html += '<div class="booking-item-actions">';
         if (b.status === 'PENDING' || b.status === 'CONFIRMED') {
-            html += '<button onclick="prepareReschedule(' + b.bookingId + ', ' + b.specialistId + ')" class="btn-small">Reschedule</button>';
+            html += '<button onclick="prepareReschedule(' + b.bookingId + ', ' + b.specialistId + ', ' + b.slotId + ', \'' + b.appointmentDate + '\', \'' + b.slotStartTime + '\', \'' + b.slotEndTime + '\')" class="btn-small">Reschedule</button>';
             html += '<button onclick="cancelBookingCustomer(' + b.bookingId + ')" class="btn-small">Cancel</button>';
         }
         html += '</div>';
@@ -1143,8 +1143,16 @@ function selectBookingForDetails(bookingId, status) {
 }
 
 // Prepare reschedule
-async function prepareReschedule(bookingId, specialistId) {
-    selectedBooking = { bookingId: bookingId, specialistId: specialistId };
+async function prepareReschedule(bookingId, specialistId, slotId, appointmentDate, startTime, endTime) {
+    // Store full booking info for filtering and reschedule
+    selectedBooking = { 
+        bookingId: bookingId, 
+        specialistId: specialistId,
+        slotId: slotId,
+        appointmentDate: appointmentDate,
+        startTime: startTime,
+        endTime: endTime
+    };
     setDebugBooking(selectedBooking);
     
     document.getElementById('reschedule-section').classList.remove('hidden');
@@ -1169,26 +1177,135 @@ async function prepareReschedule(bookingId, specialistId) {
     }
 }
 
-// Display reschedule slots
+// Helper: Normalize status from any possible field
+function normalizeStatus(slot) {
+    return String(
+        slot.occurrenceStatus ||
+        slot.status ||
+        slot.bookingStatus ||
+        slot.availabilityStatus ||
+        ''
+    ).toUpperCase();
+}
+
+// Helper: Check if a slot is bookable for rescheduling (STRICT)
+function isSlotBookable(slot) {
+    // Explicitly not bookable
+    if (slot.bookable === false || slot.bookable === 'false') {
+        return false;
+    }
+    
+    var status = normalizeStatus(slot);
+    
+    // Block these statuses - these are NEVER selectable for reschedule
+    var blockedStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'BOOKED', 'UNAVAILABLE'];
+    if (blockedStatuses.indexOf(status) !== -1) {
+        return false;
+    }
+    
+    // Must be explicitly AVAILABLE or CANCELLED with bookable=true
+    if (slot.bookable === true) {
+        return true;
+    }
+    
+    // If no explicit bookable flag, only allow AVAILABLE or CANCELLED status
+    if (status === 'AVAILABLE' || status === 'CANCELLED') {
+        return true;
+    }
+    
+    // Reject if no status info at all
+    return false;
+}
+
+// Helper: Check if slot is the same occurrence as the booking
+function isSameOccurrence(slot, booking) {
+    if (!booking) return false;
+    
+    var slotDate = slot.appointmentDate || slot.slotDate;
+    var bookingDate = booking.appointmentDate || booking.slotDate;
+    var slotStart = slot.startTime || slot.slotStartTime;
+    var slotEnd = slot.endTime || slot.slotEndTime;
+    var bookingStart = booking.startTime || booking.slotStartTime;
+    var bookingEnd = booking.endTime || booking.slotEndTime;
+    
+    // Compare as strings for safety
+    return String(slot.slotId) === String(booking.slotId)
+        && String(slotDate) === String(bookingDate)
+        && String(slotStart) === String(bookingStart)
+        && String(slotEnd) === String(bookingEnd);
+}
+
+// Display reschedule slots - only show bookable slots
 function displayRescheduleSlots(slots) {
     var list = document.getElementById('reschedule-slots');
     
     if (!slots || slots.length === 0) {
-        list.innerHTML = '<p>No available slots for rescheduling.</p>';
+        list.innerHTML = '<p class="empty-message">No available slots for rescheduling.</p>';
         return;
     }
     
+    // Filter to only bookable slots and exclude the current booking's occurrence
+    var availableSlots = slots.filter(function(slot) {
+        // Must be bookable
+        if (!isSlotBookable(slot)) return false;
+        
+        // Exclude the current booking's occurrence
+        if (isSameOccurrence(slot, selectedBooking)) return false;
+        
+        return true;
+    });
+    
+    if (availableSlots.length === 0) {
+        list.innerHTML = '<p class="empty-message">No available slots for rescheduling.</p>';
+        return;
+    }
+    
+    // Group by date for better UX
+    var slotsByDate = {};
+    availableSlots.forEach(function(slot) {
+        var date = slot.appointmentDate || slot.slotDate;
+        if (!slotsByDate[date]) {
+            slotsByDate[date] = [];
+        }
+        slotsByDate[date].push(slot);
+    });
+    
+    // Sort dates
+    var sortedDates = Object.keys(slotsByDate).sort();
+    
     var html = '<table><thead><tr>';
-    html += '<th>Select</th><th>Date</th><th>Start</th><th>End</th>';
+    html += '<th>Select</th><th>Date</th><th>Day</th><th>Time</th>';
     html += '</tr></thead><tbody>';
     
-    slots.forEach(function(slot) {
-        html += '<tr>';
-        html += '<td><input type="radio" name="reschedule-slot" value="' + slot.slotId + '" data-date="' + slot.appointmentDate + '"></td>';
-        html += '<td>' + slot.appointmentDate + '</td>';
-        html += '<td>' + formatTime(slot.startTime) + '</td>';
-        html += '<td>' + formatTime(slot.endTime) + '</td>';
-        html += '</tr>';
+    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    sortedDates.forEach(function(date) {
+        var daySlots = slotsByDate[date];
+        // Sort by start time
+        daySlots.sort(function(a, b) {
+            var aStart = a.startTime || a.slotStartTime;
+            var bStart = b.startTime || b.slotStartTime;
+            return aStart.localeCompare(bStart);
+        });
+        
+        // Add date row
+        var dateObj = new Date(date);
+        var dayName = dayNames[dateObj.getDay()];
+        
+        daySlots.forEach(function(slot) {
+            var startTime = slot.startTime || slot.slotStartTime;
+            var endTime = slot.endTime || slot.slotEndTime;
+            var timeStr = formatTime(startTime) + ' - ' + formatTime(endTime);
+            html += '<tr>';
+            html += '<td><input type="radio" name="reschedule-slot" value="' + slot.slotId + 
+                    '" data-date="' + (slot.appointmentDate || slot.slotDate) + 
+                    '" data-start="' + startTime + 
+                    '" data-end="' + endTime + '"></td>';
+            html += '<td>' + (slot.appointmentDate || slot.slotDate) + '</td>';
+            html += '<td>' + dayName + '</td>';
+            html += '<td>' + timeStr + '</td>';
+            html += '</tr>';
+        });
     });
     
     html += '</tbody></table>';
