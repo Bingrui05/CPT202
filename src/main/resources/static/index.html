@@ -80,9 +80,9 @@
                 <div class="demo-access-content" id="demo-access-content">
                     <p class="demo-access-desc">Quick login for testing without registration:</p>
                     <div class="demo-buttons">
-                        <button onclick="demoLogin('CUSTOMER')" class="btn-demo-outline">Customer</button>
-                        <button onclick="demoLogin('SPECIALIST')" class="btn-demo-outline">Specialist</button>
-                        <button onclick="demoLogin('MANAGER')" class="btn-demo-outline">Manager</button>
+                        <button type="button" id="demoCustomerBtn" data-demo-login="CUSTOMER" class="btn-demo-outline">Customer</button>
+                        <button type="button" id="demoSpecialistBtn" data-demo-login="SPECIALIST" class="btn-demo-outline">Specialist</button>
+                        <button type="button" id="demoManagerBtn" data-demo-login="MANAGER" class="btn-demo-outline">Manager</button>
                     </div>
                 </div>
             </div>
@@ -135,10 +135,10 @@
                         <h3>Selected Specialist</h3>
                         <div id="selected-specialist"></div>
                         
-                        <!-- Available Slots by Date -->
+                        <!-- Available Slots - Timetable Style -->
                         <div id="available-slots-section">
                             <h4>Available Time Slots</h4>
-                            <div id="available-slots-list" class="slots-grid"></div>
+                            <div id="available-slots-timetable" class="timetable-grid"></div>
                         </div>
                     </div>
                     
@@ -382,8 +382,17 @@
                                 <input type="number" id="slot-specialist-id-create" required>
                             </div>
                             <div class="form-group">
-                                <label>Date:</label>
-                                <input type="date" id="slot-date" required>
+                                <label>Day of Week:</label>
+                                <select id="slot-day-of-week" required>
+                                    <option value="">Select day</option>
+                                    <option value="MONDAY">Monday</option>
+                                    <option value="TUESDAY">Tuesday</option>
+                                    <option value="WEDNESDAY">Wednesday</option>
+                                    <option value="THURSDAY">Thursday</option>
+                                    <option value="FRIDAY">Friday</option>
+                                    <option value="SATURDAY">Saturday</option>
+                                    <option value="SUNDAY">Sunday</option>
+                                </select>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -418,8 +427,17 @@
                                 <input type="number" id="update-slot-specialist">
                             </div>
                             <div class="form-group">
-                                <label>Date:</label>
-                                <input type="date" id="update-slot-date">
+                                <label>Day of Week:</label>
+                                <select id="update-slot-day-of-week">
+                                    <option value="">Keep current</option>
+                                    <option value="MONDAY">Monday</option>
+                                    <option value="TUESDAY">Tuesday</option>
+                                    <option value="WEDNESDAY">Wednesday</option>
+                                    <option value="THURSDAY">Thursday</option>
+                                    <option value="FRIDAY">Friday</option>
+                                    <option value="SATURDAY">Saturday</option>
+                                    <option value="SUNDAY">Sunday</option>
+                                </select>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -436,7 +454,6 @@
                                 <select id="update-slot-status">
                                     <option value="">Keep current</option>
                                     <option value="AVAILABLE">Available</option>
-                                    <option value="BOOKED">Booked</option>
                                     <option value="UNAVAILABLE">Unavailable</option>
                                 </select>
                             </div>

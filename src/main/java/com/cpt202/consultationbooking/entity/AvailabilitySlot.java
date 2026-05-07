@@ -2,7 +2,7 @@ package com.cpt202.consultationbooking.entity;
 
 import com.cpt202.consultationbooking.enums.SlotStatus;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 @Entity
@@ -17,8 +17,9 @@ public class AvailabilitySlot {
     @JoinColumn(name = "specialist_id", nullable = false)
     private Specialist specialist;
 
-    @Column(nullable = false)
-    private LocalDate date;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_of_week", nullable = false)
+    private DayOfWeek dayOfWeek;
 
     @Column(nullable = false)
     private LocalTime startTime;
@@ -32,11 +33,11 @@ public class AvailabilitySlot {
 
     public AvailabilitySlot() {}
 
-    public AvailabilitySlot(Long slotId, Specialist specialist, LocalDate date, LocalTime startTime,
+    public AvailabilitySlot(Long slotId, Specialist specialist, DayOfWeek dayOfWeek, LocalTime startTime,
                            LocalTime endTime, SlotStatus status) {
         this.slotId = slotId;
         this.specialist = specialist;
-        this.date = date;
+        this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = status;
@@ -46,8 +47,8 @@ public class AvailabilitySlot {
     public void setSlotId(Long slotId) { this.slotId = slotId; }
     public Specialist getSpecialist() { return specialist; }
     public void setSpecialist(Specialist specialist) { this.specialist = specialist; }
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
+    public DayOfWeek getDayOfWeek() { return dayOfWeek; }
+    public void setDayOfWeek(DayOfWeek dayOfWeek) { this.dayOfWeek = dayOfWeek; }
     public LocalTime getStartTime() { return startTime; }
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
     public LocalTime getEndTime() { return endTime; }
@@ -60,19 +61,19 @@ public class AvailabilitySlot {
     public static class AvailabilitySlotBuilder {
         private Long slotId;
         private Specialist specialist;
-        private LocalDate date;
+        private DayOfWeek dayOfWeek;
         private LocalTime startTime;
         private LocalTime endTime;
         private SlotStatus status;
 
         public AvailabilitySlotBuilder slotId(Long slotId) { this.slotId = slotId; return this; }
         public AvailabilitySlotBuilder specialist(Specialist specialist) { this.specialist = specialist; return this; }
-        public AvailabilitySlotBuilder date(LocalDate date) { this.date = date; return this; }
+        public AvailabilitySlotBuilder dayOfWeek(DayOfWeek dayOfWeek) { this.dayOfWeek = dayOfWeek; return this; }
         public AvailabilitySlotBuilder startTime(LocalTime startTime) { this.startTime = startTime; return this; }
         public AvailabilitySlotBuilder endTime(LocalTime endTime) { this.endTime = endTime; return this; }
         public AvailabilitySlotBuilder status(SlotStatus status) { this.status = status; return this; }
         public AvailabilitySlot build() {
-            return new AvailabilitySlot(slotId, specialist, date, startTime, endTime, status);
+            return new AvailabilitySlot(slotId, specialist, dayOfWeek, startTime, endTime, status);
         }
     }
 }

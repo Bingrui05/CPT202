@@ -18,6 +18,7 @@ import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -26,10 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
-    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(
-            BookingStatus.PENDING, 
-            BookingStatus.CONFIRMED
-    );
+    private static final List<BookingStatus> BLOCKING_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED);
 
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
@@ -61,27 +60,31 @@ public class BookingService {
             throw new BusinessException("Slot does not belong to the selected specialist");
         }
 
-        if (slot.getStatus() != SlotStatus.AVAILABLE) {
-            throw new BusinessException("Slot is not available");
+        LocalDate appointmentDate = request.getAppointmentDate();
+        
+        if (appointmentDate.isBefore(LocalDate.now())) {
+            throw new BusinessException("Cannot book appointments in the past");
         }
 
-        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
-            throw new BusinessException("Slot is already occupied by an active booking");
+        if (appointmentDate.getDayOfWeek() != slot.getDayOfWeek()) {
+            throw new BusinessException("Appointment date must be on " + slot.getDayOfWeek());
+        }
+
+        if (bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(slot.getSlotId(), appointmentDate, BLOCKING_STATUSES)) {
+            throw new BusinessException("This appointment time is no longer available.");
         }
 
         Booking booking = Booking.builder()
                 .customer(customer)
                 .specialist(specialist)
                 .slot(slot)
+                .appointmentDate(appointmentDate)
                 .topic(request.getTopic())
                 .notes(request.getNotes())
                 .status(BookingStatus.PENDING)
                 .price(specialist.getFee())
                 .createdAt(LocalDateTime.now())
                 .build();
-
-        slot.setStatus(SlotStatus.BOOKED);
-        slotRepository.save(slot);
 
         Booking saved = bookingRepository.save(booking);
         return toResponse(saved);
@@ -115,15 +118,9 @@ public class BookingService {
             throw new BusinessException("COMPLETED booking cannot be cancelled");
         }
 
-        AvailabilitySlot slot = booking.getSlot();
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
-
-        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
-            slot.setStatus(SlotStatus.AVAILABLE);
-            slotRepository.save(slot);
-        }
 
         return toResponse(booking);
     }
@@ -137,18 +134,9 @@ public class BookingService {
             throw new BusinessException("Only CONFIRMED booking can be completed");
         }
 
-        AvailabilitySlot slot = booking.getSlot();
-        slot.setStatus(SlotStatus.AVAILABLE);
-        slotRepository.save(slot);
-
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
-
-        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(slot.getSlotId(), ACTIVE_STATUSES)) {
-            slot.setStatus(SlotStatus.AVAILABLE);
-            slotRepository.save(slot);
-        }
 
         return toResponse(booking);
     }
@@ -173,27 +161,25 @@ public class BookingService {
             throw new BusinessException("New slot does not belong to the same specialist as the original booking");
         }
 
-        if (newSlot.getStatus() != SlotStatus.AVAILABLE) {
-            throw new BusinessException("New slot is not available");
+        LocalDate newAppointmentDate = request.getNewAppointmentDate();
+        
+        if (newAppointmentDate.isBefore(LocalDate.now())) {
+            throw new BusinessException("Cannot reschedule to a date in the past");
         }
 
-        if (bookingRepository.existsBySlot_SlotIdAndStatusIn(newSlot.getSlotId(), ACTIVE_STATUSES)) {
-            throw new BusinessException("New slot is already occupied by an active booking");
+        if (newAppointmentDate.getDayOfWeek() != newSlot.getDayOfWeek()) {
+            throw new BusinessException("New appointment date must be on " + newSlot.getDayOfWeek());
         }
 
-        AvailabilitySlot oldSlot = booking.getSlot();
+        if (bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(newSlot.getSlotId(), newAppointmentDate, BLOCKING_STATUSES)) {
+            throw new BusinessException("This appointment time is no longer available.");
+        }
+
         booking.setSlot(newSlot);
+        booking.setAppointmentDate(newAppointmentDate);
         booking.setStatus(BookingStatus.PENDING);
         booking.setUpdatedAt(LocalDateTime.now());
         bookingRepository.save(booking);
-
-        if (!bookingRepository.existsBySlot_SlotIdAndStatusIn(oldSlot.getSlotId(), ACTIVE_STATUSES)) {
-            oldSlot.setStatus(SlotStatus.AVAILABLE);
-            slotRepository.save(oldSlot);
-        }
-
-        newSlot.setStatus(SlotStatus.BOOKED);
-        slotRepository.save(newSlot);
 
         return toResponse(booking);
     }
@@ -233,8 +219,7 @@ public class BookingService {
                 .specialistId(booking.getSpecialist().getSpecialistId())
                 .specialistName(booking.getSpecialist().getUser().getUsername())
                 .slotId(booking.getSlot().getSlotId())
-                .slotDateTime(booking.getSlot().getDate().atTime(booking.getSlot().getStartTime()))
-                .slotDate(booking.getSlot().getDate())
+                .appointmentDate(booking.getAppointmentDate())
                 .slotStartTime(booking.getSlot().getStartTime())
                 .slotEndTime(booking.getSlot().getEndTime())
                 .topic(booking.getTopic())

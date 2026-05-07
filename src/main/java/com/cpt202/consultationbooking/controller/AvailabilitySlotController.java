@@ -3,6 +3,7 @@ package com.cpt202.consultationbooking.controller;
 import com.cpt202.consultationbooking.dto.request.CreateSlotRequest;
 import com.cpt202.consultationbooking.dto.request.UpdateSlotRequest;
 import com.cpt202.consultationbooking.dto.response.ApiResponse;
+import com.cpt202.consultationbooking.dto.response.AvailableSlotResponse;
 import com.cpt202.consultationbooking.dto.response.SlotResponse;
 import com.cpt202.consultationbooking.service.AvailabilitySlotService;
 import jakarta.validation.Valid;
@@ -55,9 +56,9 @@ public class AvailabilitySlotController {
     }
 
     @GetMapping("/specialist/{specialistId}/available")
-    public ResponseEntity<ApiResponse<List<SlotResponse>>> getAvailableSlotsBySpecialist(
+    public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlotsBySpecialist(
             @PathVariable Long specialistId) {
-        List<SlotResponse> slots = slotService.getAvailableSlotsBySpecialist(specialistId);
+        List<AvailableSlotResponse> slots = slotService.getAvailableSlotsBySpecialist(specialistId);
         return ResponseEntity.ok(ApiResponse.success("Available slots retrieved successfully", slots));
     }
 }
