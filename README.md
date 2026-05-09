@@ -1,177 +1,169 @@
 # Consultation Booking System
 
-A Spring Boot backend application for managing consultation bookings between customers and specialists.
+A Spring Boot web application for managing consultation bookings between customers and specialists. Built for CPT202 Assignment 2, First Release.
 
 ## Technology Stack
 
-- **Java 23** (compatible with Java 17+)
+- **Java 21**
 - **Spring Boot 3.3.0**
-- **Spring Boot 3.2.0**
 - **Maven**
-- **Spring Data JPA**
-- **MySQL Driver**
-- **Validation (Jakarta Bean Validation)**
+- **Spring Data JPA / Hibernate**
+- **MySQL 8.0**
+- **Jakarta Bean Validation**
 - **Lombok**
 
 ## Project Structure
 
 ```
 com.cpt202.consultationbooking
-├── config          # Configuration classes
+├── config          # Configuration classes and data initializer
 ├── controller      # REST controllers
-├── dto.request     # Request DTOs
-├── dto.response    # Response DTOs
+├── dto/request     # Request DTOs
+├── dto/response    # Response DTOs
 ├── entity          # JPA entities
-├── enums           # Enumerations
-├── exception       # Exception handling
+├── enums           # Enumerations (Role, BookingStatus, SlotStatus)
+├── exception       # Global exception handling
 ├── repository      # JPA repositories
-└── service         # Business logic services
+└── service         # Business logic
 ```
+
+Frontend static files are located at `src/main/resources/static/` and served directly by Spring Boot — no separate web server is required.
+
+## Prerequisites
+
+- Java 21
+- Maven 3.6+
+- MySQL 8.0+
 
 ## Database Setup
 
-### 1. Create MySQL Database
-
-Before running the application, create a MySQL database named `consultation_booking`:
+Create a MySQL database before running the application:
 
 ```sql
 CREATE DATABASE consultation_booking CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 2. Configure Database Connection
-
-Edit `src/main/resources/application.properties` with your MySQL credentials:
+Then update `src/main/resources/application.properties` with your credentials:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/consultation_booking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.username=YOUR_USERNAME
-spring.datasource.password=YOUR_PASSWORD
+spring.datasource.url=jdbc:mysql://localhost:3306/consultation_booking?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+spring.jpa.hibernate.ddl-auto=update
+server.port=8080
 ```
 
-Or copy the example file and modify it:
+## Running Locally
 
 ```bash
-cp src/main/resources/application-example.properties src/main/resources/application.properties
+# Clone the repository and switch to the release branch
+git clone https://github.com/Bingrui05/CPT202.git
+cd CPT202
+git checkout rebuild-release1
+
+# Build and run
+mvn clean package -DskipTests
+java -jar target/consultation-booking-1.0.0.jar
 ```
 
-## Running the Application
+The application will start at `http://localhost:8080`.
 
-### Prerequisites
+## Demo Accounts
 
-- Java 17 or higher
-- Maven 3.6+
-- MySQL 8.0+
+The application seeds the following accounts on first run:
 
-### Build and Run
+| Role       | Username      | Password     |
+|------------|---------------|--------------|
+| Manager    | manager1      | password123  |
+| Customer   | customer1     | password123  |
+| Customer   | customer2     | password123  |
+| Specialist | specialist1   | password123  |
+| Specialist | specialist2   | password123  |
 
-```bash
-# Navigate to project directory
-cd consultation-booking-system
+## Core Booking Workflow
 
-# Build the project
-mvn clean install
-
-# Run the application
-mvn spring-boot:run
-```
-
-The application will start on `http://localhost:8080`
+1. **Customer** searches for specialists by category, level, or availability
+2. **Customer** selects an available slot and creates a booking (status: `PENDING`)
+3. **Manager** reviews and confirms or cancels the booking
+4. **Specialist** marks the confirmed appointment as completed (status: `COMPLETED`)
+5. Cancelling or completing a booking releases the slot back to `AVAILABLE`
 
 ## API Endpoints
 
-### Health Check
-- `GET /api/health` - Check if backend is running
-
 ### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login and get user info
+- `POST /api/auth/register` — Register a new user
+- `POST /api/auth/login` — Login
 
 ### Specialists
-- `POST /api/specialists` - Create a new specialist
-- `GET /api/specialists` - Get all specialists
-- `GET /api/specialists/{id}` - Get specialist by ID
-- `GET /api/specialists/search` - Search specialists by category, level, or status
+- `GET /api/specialists` — List all specialists
+- `GET /api/specialists/search` — Search by category, level, or keyword
+- `GET /api/specialists/{id}` — Get specialist by ID
 
 ### Availability Slots
-- `POST /api/slots` - Create a new slot
-- `GET /api/slots/specialist/{specialistId}` - Get all slots for a specialist
-- `GET /api/slots/specialist/{specialistId}/available` - Get available slots for a specialist
+- `POST /api/slots` — Create a slot (Specialist/Manager)
+- `GET /api/slots/specialist/{specialistId}` — Get all slots for a specialist
+- `GET /api/slots/specialist/{specialistId}/available` — Get available slots only
 
 ### Bookings
-- `POST /api/bookings` - Create a new booking
-- `GET /api/bookings` - Get all bookings
-- `GET /api/bookings/customer/{customerId}` - Get bookings by customer
-- `GET /api/bookings/specialist/{specialistId}` - Get bookings by specialist
-- `PUT /api/bookings/{bookingId}/confirm` - Confirm a booking
-- `PUT /api/bookings/{bookingId}/cancel` - Cancel a booking
-- `PUT /api/bookings/{bookingId}/complete` - Complete a booking
-
-## First-Release Workflow
-
-### User Roles
-1. **CUSTOMER** - Can browse specialists, view slots, and create bookings
-2. **SPECIALIST** - Can view their schedule and mark appointments as completed
-3. **MANAGER** - Can confirm or cancel bookings
-
-### Booking Workflow
-
-1. **Customer browses specialists**
-   - `GET /api/specialists` or `GET /api/specialists/search`
-
-2. **Customer views available slots**
-   - `GET /api/slots/specialist/{specialistId}/available`
-
-3. **Customer creates a booking**
-   - `POST /api/bookings`
-   - Booking status starts as PENDING
-   - Price is automatically set from specialist's fee
-   - Slot status changes to BOOKED
-
-4. **Manager confirms or cancels the booking**
-   - `PUT /api/bookings/{bookingId}/confirm`
-   - `PUT /api/bookings/{bookingId}/cancel`
-   - Only PENDING bookings can be confirmed
-   - COMPLETED bookings cannot be cancelled
-   - Cancelled bookings release the slot (status becomes AVAILABLE)
-
-5. **Specialist views their schedule**
-   - `GET /api/bookings/specialist/{specialistId}`
-
-6. **Specialist marks appointment as COMPLETED**
-   - `PUT /api/bookings/{bookingId}/complete`
-   - Only CONFIRMED bookings can be completed
+- `POST /api/bookings` — Create a booking (Customer)
+- `GET /api/bookings/customer/{customerId}` — Get bookings by customer
+- `GET /api/bookings/specialist/{specialistId}` — Get bookings by specialist
+- `PUT /api/bookings/{bookingId}/confirm` — Confirm a booking (Manager)
+- `PUT /api/bookings/{bookingId}/cancel` — Cancel a booking
+- `PUT /api/bookings/{bookingId}/complete` — Complete a booking (Specialist)
 
 ## Business Rules
 
-1. A slot cannot be booked by more than one customer
-2. Only CONFIRMED bookings are valid appointments
-3. COMPLETED bookings cannot be modified by customers
-4. Pricing is calculated consistently from specialist's fee
-5. When a booking is created, its price is copied from the specialist's fee
-6. When a slot is booked, its status becomes BOOKED
+- A slot cannot be booked by more than one customer at a time
+- Only `PENDING` bookings can be confirmed or cancelled
+- Only `CONFIRMED` bookings can be completed
+- Cancelling or completing a booking returns the slot to `AVAILABLE`
+- Booking price is copied from the specialist's fee at the time of booking
+- Slot overlap validation prevents a specialist from being double-booked
+
+## Production Deployment
+
+The first release is deployed on Alibaba Cloud ECS at:
+
+```
+http://121.43.177.5:8080
+```
+
+Deployed branch: `rebuild-release1` (commit `c0838b4`)
+
+The JAR is started in the background using:
+
+```bash
+nohup java -jar /root/consultation-booking-1.0.0.jar \
+  --spring.config.location=file:/root/application.properties \
+  > /root/app.log 2>&1 &
+```
+
+See `docs/deployment/` for full deployment documentation.
+
+## Known Limitations (First Release)
+
+- Passwords are stored and compared in plain text — BCrypt hashing will be added in a future release
+- No JWT authentication — all endpoints are currently unprotected
+- Role assignment is not server-side validated during registration
+- Application and database are co-located on a single ECS instance
+- No HTTPS configured
 
 ## Sample Data
 
-The application includes a `DataInitializer` that creates sample data on first run:
+On first run, the `DataInitializer` automatically seeds the following data:
 
-- 1 manager user (username: `manager1`, password: `password123`)
-- 2 customer users (username: `customer1`/`customer2`, password: `password123`)
-- 2 specialist users (username: `specialist1`/`specialist2`, password: `password123`)
-- 2 expertise categories
-- 2 levels
-- 5 available slots across specialists
+- 2 expertise categories (e.g. Finance, Legal)
+- 2 levels (e.g. Junior, Senior)
+- 1 manager, 2 customers, 2 specialists
+- 5 availability slots across the two specialists
 
-## Testing
+This is sufficient to demonstrate the full booking workflow without any manual setup.
 
-Run the test suite:
+## Running Tests
 
 ```bash
 mvn clean test
 ```
 
-## Development Notes
-
-- **Password Storage**: Currently uses plain text comparison. JWT authentication can be added in future releases.
-- **Validation**: All request DTOs are validated using Jakarta Bean Validation annotations.
-- **DTO Responses**: Controllers return DTOs instead of entities to avoid circular JSON serialization issues.
-- **Business Logic**: Service layer handles all business logic; controllers remain thin.
+Test documentation is maintained under `docs/testing/`.
