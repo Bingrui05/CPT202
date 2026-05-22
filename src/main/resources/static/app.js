@@ -39,6 +39,7 @@ document.getElementById('create-specialist-form').addEventListener('submit', han
 document.getElementById('update-specialist-form').addEventListener('submit', handleUpdateSpecialist);
 document.getElementById('create-slot-form').addEventListener('submit', handleCreateSlot);
 document.getElementById('update-slot-form').addEventListener('submit', handleUpdateSlot);
+document.getElementById('specialist-update-request-form').addEventListener('submit', handleSubmitUpdateRequest);
 
 // Initialize
 showSection();
@@ -62,6 +63,7 @@ function showSection() {
             specialistSection.classList.remove('hidden');
             checkSpecialistProfile();
             loadMySchedule();
+            loadMyUpdateRequests();
         } else if (currentUser.role === 'MANAGER') {
             managerSection.classList.remove('hidden');
             showManagerTab('bookings');
@@ -203,6 +205,9 @@ function showManagerTab(tabName) {
         case 'levels':
             loadLevels();
             break;
+        case 'requests':
+            loadPendingUpdateRequests();
+            break;
     }
 }
 
@@ -258,6 +263,12 @@ function clearAllSelections() {
     document.getElementById('admin-specialists-list').innerHTML = '';
     document.getElementById('slots-list').innerHTML = '';
     document.getElementById('levels-list').innerHTML = '';
+    var myUpdateRequestsList = document.getElementById('my-update-requests-list');
+    if (myUpdateRequestsList) myUpdateRequestsList.innerHTML = '';
+    var managerUpdateRequestsList = document.getElementById('manager-update-requests-list');
+    if (managerUpdateRequestsList) managerUpdateRequestsList.innerHTML = '';
+    var updateRequestResult = document.getElementById('specialist-update-request-result');
+    if (updateRequestResult) updateRequestResult.innerHTML = '';
     
     // Clear messages
     document.getElementById('messages').innerHTML = '';
@@ -1384,6 +1395,218 @@ async function cancelBookingManager(bookingId) {
     } catch (error) {
         setDebugError(error.message);
         showError('Error cancelling booking: ' + error.message);
+    }
+}
+
+
+// ============= SPECIALIST UPDATE REQUESTS =============
+
+async function handleSubmitUpdateRequest(e) {
+    e.preventDefault();
+
+    if (!currentUser || !currentUser.specialistId) {
+        showError('This account does not have a linked specialist profile.');
+        return;
+    }
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: document.getElementById('request-type').value,
+        fieldName: document.getElementById('request-field-name').value.trim(),
+        oldValue: document.getElementById('request-old-value').value.trim(),
+        newValue: document.getElementById('request-new-value').value.trim(),
+        reason: document.getElementById('request-reason').value.trim()
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-update-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-update-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            document.getElementById('specialist-update-request-form').reset();
+            var result = document.getElementById('specialist-update-request-result');
+            if (result) {
+                result.innerHTML = '<div class="success-box">Request submitted successfully. Status: PENDING</div>';
+            }
+            showMessage('Specialist update request submitted successfully');
+            loadMyUpdateRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting update request: ' + error.message);
+    }
+}
+
+async function loadMyUpdateRequests() {
+    if (!currentUser || !currentUser.specialistId) return;
+
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialist-update-requests/specialist/' + currentUser.specialistId);
+
+    try {
+        var response = await fetch('/api/specialist-update-requests/specialist/' + currentUser.specialistId);
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            displayUpdateRequests(data.data, 'my-update-requests-list', false);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading my update requests: ' + error.message);
+    }
+}
+
+async function loadAllUpdateRequests() {
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialist-update-requests');
+
+    try {
+        var response = await fetch('/api/specialist-update-requests');
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            displayUpdateRequests(data.data, 'manager-update-requests-list', true);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading update requests: ' + error.message);
+    }
+}
+
+async function loadPendingUpdateRequests() {
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialist-update-requests/pending');
+
+    try {
+        var response = await fetch('/api/specialist-update-requests/pending');
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            displayUpdateRequests(data.data, 'manager-update-requests-list', true);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading pending update requests: ' + error.message);
+    }
+}
+
+function displayUpdateRequests(requests, containerId, showActions) {
+    var list = document.getElementById(containerId);
+    if (!list) return;
+
+    if (!requests || requests.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No update requests found.</p></div>';
+        return;
+    }
+
+    var html = '<table><thead><tr>';
+    html += '<th>ID</th><th>Specialist</th><th>Type</th><th>Field</th><th>Current</th><th>Requested</th><th>Reason</th><th>Status</th><th>Manager Comment</th>';
+    if (showActions) html += '<th>Action</th>';
+    html += '</tr></thead><tbody>';
+
+    requests.forEach(function(req) {
+        var status = req.status || '-';
+        html += '<tr>';
+        html += '<td>' + escapeHtml(req.requestId || req.id || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.specialistName || req.specialistId || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.requestType || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.fieldName || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.oldValue || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.newValue || '-') + '</td>';
+        html += '<td>' + escapeHtml(req.reason || '-') + '</td>';
+        html += '<td><span class="status-badge ' + getUpdateRequestStatusClass(status) + '">' + escapeHtml(status) + '</span></td>';
+        html += '<td>' + escapeHtml(req.managerComment || '-') + '</td>';
+
+        if (showActions) {
+            var requestId = req.requestId || req.id;
+            var actions = '';
+            if (status === 'PENDING') {
+                actions += '<button onclick="reviewUpdateRequest(' + requestId + ')" class="btn-small">Mark Reviewed</button> ';
+                actions += '<button onclick="rejectUpdateRequest(' + requestId + ')" class="btn-small">Reject</button>';
+            } else {
+                actions = '-';
+            }
+            html += '<td>' + actions + '</td>';
+        }
+
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    list.innerHTML = html;
+}
+
+function getUpdateRequestStatusClass(status) {
+    switch (status) {
+        case 'PENDING': return 'status-pending';
+        case 'REVIEWED': return 'status-confirmed';
+        case 'REJECTED': return 'status-cancelled';
+        default: return '';
+    }
+}
+
+async function reviewUpdateRequest(requestId) {
+    var managerComment = prompt('Manager comment:', 'Reviewed by manager. Official update should be handled through existing Specialist or Availability CRUD.');
+    if (managerComment === null) return;
+    await processUpdateRequest(requestId, 'review', managerComment);
+}
+
+async function rejectUpdateRequest(requestId) {
+    var managerComment = prompt('Reason for rejection:', 'Rejected by manager.');
+    if (managerComment === null) return;
+    await processUpdateRequest(requestId, 'reject', managerComment);
+}
+
+async function processUpdateRequest(requestId, action, managerComment) {
+    var requestBody = { managerComment: managerComment };
+
+    clearDebug();
+    setDebugMethod('PUT');
+    setDebugUrl('/api/specialist-update-requests/' + requestId + '/' + action);
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-update-requests/' + requestId + '/' + action, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Update request ' + action + ' completed successfully');
+            loadPendingUpdateRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error processing update request: ' + error.message);
     }
 }
 

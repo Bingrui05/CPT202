@@ -192,6 +192,50 @@
                     </div>
                     <div id="specialist-bookings" class="schedule-table"></div>
                 </div>
+
+                <div class="card update-request-card">
+                    <div class="card-header">
+                        <h3>Submit Update Request</h3>
+                        <button onclick="loadMyUpdateRequests()" class="btn-small">My Requests</button>
+                    </div>
+                    <p class="helper-text">Submit profile or availability update requests for manager review. Official changes are still handled by the manager.</p>
+                    <form id="specialist-update-request-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Request Type:</label>
+                                <select id="request-type" required>
+                                    <option value="PROFILE">Profile</option>
+                                    <option value="AVAILABILITY">Availability</option>
+                                    <option value="FEE">Fee</option>
+                                    <option value="CATEGORY">Category</option>
+                                    <option value="LEVEL">Level</option>
+                                    <option value="STATUS">Status</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Field Name:</label>
+                                <input type="text" id="request-field-name" placeholder="e.g. information, fee, slot" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Current Value:</label>
+                                <input type="text" id="request-old-value" placeholder="Current value">
+                            </div>
+                            <div class="form-group">
+                                <label>Requested Value:</label>
+                                <input type="text" id="request-new-value" placeholder="Requested new value" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason:</label>
+                            <textarea id="request-reason" rows="3" placeholder="Explain why this update is needed" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">Submit Request</button>
+                    </form>
+                    <div id="specialist-update-request-result" class="request-result"></div>
+                    <div id="my-update-requests-list" class="request-list"></div>
+                </div>
             </div>
         </section>
 
@@ -210,6 +254,7 @@
                 <button class="tab-btn" onclick="showManagerTab('specialists')">Specialists</button>
                 <button class="tab-btn" onclick="showManagerTab('slots')">Slots</button>
                 <button class="tab-btn" onclick="showManagerTab('levels')">Levels</button>
+                <button class="tab-btn" onclick="showManagerTab('requests')">Update Requests</button>
             </div>
             
             <!-- Tab: Bookings -->
@@ -454,6 +499,21 @@
                         <button onclick="loadLevels()" class="btn-small">Refresh</button>
                     </div>
                     <div id="levels-list"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Specialist Update Requests -->
+            <div id="tab-requests" class="tab-content">
+                <div class="card update-request-card">
+                    <div class="card-header">
+                        <h3>Specialist Update Requests</h3>
+                        <div class="request-actions">
+                            <button onclick="loadAllUpdateRequests()" class="btn-small">Load All Requests</button>
+                            <button onclick="loadPendingUpdateRequests()" class="btn-small">Load Pending Requests</button>
+                        </div>
+                    </div>
+                    <p class="helper-text">Managers review requests submitted by specialists. Official updates still use the existing Specialist and Availability management functions.</p>
+                    <div id="manager-update-requests-list" class="request-list"></div>
                 </div>
             </div>
         </section>

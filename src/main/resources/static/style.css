@@ -930,3 +930,47 @@ tr:hover {
     border-color: #1d1d1f;
     color: #ffffff;
 }
+
+
+/* Specialist Update Request Workflow */
+.helper-text {
+    background: #f5f5f7;
+    border-left: 4px solid #0071e3;
+    color: #424245;
+    font-size: 14px;
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 6px;
+}
+
+.update-request-card {
+    border-color: #d2e3fc;
+}
+
+.request-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.request-result {
+    margin-top: 12px;
+}
+
+.success-box {
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    border-radius: 8px;
+    color: #1b5e20;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.request-list {
+    margin-top: 15px;
+    overflow-x: auto;
+}
+
+.request-list table {
+    min-width: 900px;
+}
