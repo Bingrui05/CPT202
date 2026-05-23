@@ -8,7 +8,6 @@ import com.cpt202.consultationbooking.entity.Booking;
 import com.cpt202.consultationbooking.entity.Customer;
 import com.cpt202.consultationbooking.entity.Specialist;
 import com.cpt202.consultationbooking.enums.BookingStatus;
-import com.cpt202.consultationbooking.enums.SlotStatus;
 import com.cpt202.consultationbooking.exception.BusinessException;
 import com.cpt202.consultationbooking.exception.ResourceNotFoundException;
 import com.cpt202.consultationbooking.repository.AvailabilitySlotRepository;
@@ -16,6 +15,7 @@ import com.cpt202.consultationbooking.repository.BookingRepository;
 import com.cpt202.consultationbooking.repository.CustomerRepository;
 import com.cpt202.consultationbooking.repository.SpecialistRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
-    private static final List<BookingStatus> BLOCKING_STATUSES = Arrays.asList(
-            BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED);
+    private static final List<BookingStatus> ACTIVE_STATUSES = Arrays.asList(
+            BookingStatus.PENDING, BookingStatus.CONFIRMED);
 
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
@@ -45,23 +45,35 @@ public class BookingService {
         this.slotRepository = slotRepository;
     }
 
-    @Transactional
+    /**
+     * Creates a new booking with pessimistic locking to prevent double-booking.
+     * The lock is acquired FIRST to ensure serialized access to the slot.
+     *
+     * Isolation level READ_COMMITTED ensures we see only committed data,
+     * and the pessimistic lock ensures only one transaction can proceed.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public BookingResponse createBooking(CreateBookingRequest request) {
+        // CRITICAL: Lock the slot FIRST before any other database operations
+        // This prevents race conditions where multiple transactions read "no booking exists"
+        // before any of them acquires a lock
+        AvailabilitySlot slot = slotRepository.findByIdForUpdate(request.getSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
+
+        // Now that we hold the lock, load related entities and perform validations
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         Specialist specialist = specialistRepository.findById(request.getSpecialistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Specialist not found"));
 
-        AvailabilitySlot slot = slotRepository.findById(request.getSlotId())
-                .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
-
+        // Validate slot belongs to specialist
         if (!slot.getSpecialist().getSpecialistId().equals(specialist.getSpecialistId())) {
             throw new BusinessException("Slot does not belong to the selected specialist");
         }
 
         LocalDate appointmentDate = request.getAppointmentDate();
-        
+
         if (appointmentDate.isBefore(LocalDate.now())) {
             throw new BusinessException("Cannot book appointments in the past");
         }
@@ -70,7 +82,13 @@ public class BookingService {
             throw new BusinessException("Appointment date must be on " + slot.getDayOfWeek());
         }
 
-        if (bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(slot.getSlotId(), appointmentDate, BLOCKING_STATUSES)) {
+        // Use pessimistic lock query for the booking check as well
+        // This ensures we see the latest committed data
+        boolean hasActiveBooking = bookingRepository
+                .existsBySlotIdAndAppointmentDateAndStatusInWithLock(
+                        slot.getSlotId(), appointmentDate, ACTIVE_STATUSES);
+
+        if (hasActiveBooking) {
             throw new BusinessException("This appointment time is no longer available.");
         }
 
@@ -141,7 +159,11 @@ public class BookingService {
         return toResponse(booking);
     }
 
-    @Transactional
+    /**
+     * Reschedules a booking with pessimistic locking on the new target slot.
+     * The new slot is locked FIRST before checking availability.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public BookingResponse rescheduleBooking(Long bookingId, RescheduleBookingRequest request) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
@@ -154,15 +176,17 @@ public class BookingService {
             throw new BusinessException("CANCELLED booking cannot be rescheduled");
         }
 
-        AvailabilitySlot newSlot = slotRepository.findById(request.getNewSlotId())
+        // CRITICAL: Lock the new slot FIRST
+        AvailabilitySlot newSlot = slotRepository.findByIdForUpdate(request.getNewSlotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Slot not found"));
 
+        // Validate new slot belongs to the same specialist
         if (!newSlot.getSpecialist().getSpecialistId().equals(booking.getSpecialist().getSpecialistId())) {
             throw new BusinessException("New slot does not belong to the same specialist as the original booking");
         }
 
         LocalDate newAppointmentDate = request.getNewAppointmentDate();
-        
+
         if (newAppointmentDate.isBefore(LocalDate.now())) {
             throw new BusinessException("Cannot reschedule to a date in the past");
         }
@@ -171,7 +195,13 @@ public class BookingService {
             throw new BusinessException("New appointment date must be on " + newSlot.getDayOfWeek());
         }
 
-        if (bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(newSlot.getSlotId(), newAppointmentDate, BLOCKING_STATUSES)) {
+        // Check if new slot is already booked for this date
+        // Exclude the current booking from the check (for rescheduling from one date to another)
+        boolean hasActiveBooking = bookingRepository
+                .existsBySlotIdAndAppointmentDateAndStatusInWithLockExcludingBooking(
+                        newSlot.getSlotId(), newAppointmentDate, ACTIVE_STATUSES, bookingId);
+
+        if (hasActiveBooking) {
             throw new BusinessException("This appointment time is no longer available.");
         }
 
