@@ -143,6 +143,7 @@ function showSection() {
             if (specialistSection) specialistSection.classList.remove('hidden');
             checkSpecialistProfile();
             loadMySchedule();
+            showSpecialistTab('schedule');
         } else if (currentUser.role === 'MANAGER') {
             if (managerSection) managerSection.classList.remove('hidden');
             showManagerTab('bookings');
@@ -286,6 +287,9 @@ function showManagerTab(tabName) {
         case 'levels':
             loadLevels();
             break;
+        case 'requests':
+            loadPendingRequests();
+            break;
     }
 }
 
@@ -355,10 +359,14 @@ function clearAllSelections() {
     if (el13) el13.innerHTML = '';
     const el14 = document.getElementById('levels-list');
     if (el14) el14.innerHTML = '';
-    
-    // Clear messages
-    const el15 = document.getElementById('messages');
+    const el15 = document.getElementById('my-requests-list');
     if (el15) el15.innerHTML = '';
+    const el16 = document.getElementById('pending-requests-list');
+    if (el16) el16.innerHTML = '';
+
+    // Clear messages
+    const el17 = document.getElementById('messages');
+    if (el17) el17.innerHTML = '';
 }
 
 // Demo login - calls API directly
@@ -2365,4 +2373,683 @@ function showError(message) {
     setTimeout(function() {
         div.remove();
     }, 8000);
+}
+
+// ============= SPECIALIST REQUEST FUNCTIONS =============
+
+function showSpecialistTab(tabName) {
+    document.querySelectorAll('#specialist-tab-schedule, #specialist-tab-requests').forEach(function(tab) {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('#specialist-section .tab-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+
+    var tab = document.getElementById('specialist-tab-' + tabName);
+    if (tab) tab.classList.add('active');
+
+    document.querySelectorAll('#specialist-section .tab-btn').forEach(function(btn) {
+        if (btn.textContent.toLowerCase().includes(tabName) ||
+            (tabName === 'schedule' && btn.textContent.toLowerCase().includes('schedule')) ||
+            (tabName === 'requests' && btn.textContent.toLowerCase().includes('request'))) {
+            btn.classList.add('active');
+        }
+    });
+
+    if (tabName === 'requests') {
+        loadRequestFormData();
+        loadMyRequests();
+    }
+}
+
+// Load data needed for request forms (categories and slots)
+async function loadRequestFormData() {
+    await Promise.all([
+        loadCategoriesForRequest(),
+        loadSlotsForRequest()
+    ]);
+}
+
+// Load active categories for the dropdown
+async function loadCategoriesForRequest() {
+    try {
+        var response = await fetch('/api/admin/expertise-categories');
+        var data = await response.json();
+
+        if (response.ok && data.success) {
+            populateCategoryDropdown(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+// Populate category dropdown
+function populateCategoryDropdown(categories) {
+    var select = document.getElementById('req-category-id');
+    if (!select) return;
+
+    // Clear existing options except the first placeholder
+    select.innerHTML = '<option value="">Select a category...</option>';
+
+    if (!categories || categories.length === 0) {
+        select.innerHTML = '<option value="">No categories available</option>';
+        return;
+    }
+
+    categories.forEach(function(cat) {
+        // Skip inactive categories
+        if (cat.status && cat.status !== 'ACTIVE') return;
+
+        var option = document.createElement('option');
+        option.value = cat.categoryId;
+        option.textContent = cat.name || 'Category ' + cat.categoryId;
+        select.appendChild(option);
+    });
+}
+
+// Load specialist's slots for update/deactivate dropdowns
+async function loadSlotsForRequest() {
+    if (!currentUser || !currentUser.specialistId) return;
+
+    try {
+        var response = await fetch('/api/slots/specialist/' + currentUser.specialistId);
+        var data = await response.json();
+
+        if (response.ok && data.success) {
+            populateSlotDropdowns(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading slots:', error);
+    }
+}
+
+// Populate slot dropdowns for update and deactivate
+function populateSlotDropdowns(slots) {
+    var updateSelect = document.getElementById('req-slot-update-id');
+    var deactivateSelect = document.getElementById('req-slot-deactivate-id');
+
+    // Clear existing options
+    if (updateSelect) {
+        updateSelect.innerHTML = '<option value="">Select a slot...</option>';
+    }
+    if (deactivateSelect) {
+        deactivateSelect.innerHTML = '<option value="">Select a slot...</option>';
+    }
+
+    if (!slots || slots.length === 0) {
+        if (updateSelect) updateSelect.innerHTML = '<option value="">No slots available</option>';
+        if (deactivateSelect) deactivateSelect.innerHTML = '<option value="">No slots available</option>';
+        return;
+    }
+
+    // Store slots for easy lookup when auto-filling
+    window.specialistSlotsCache = slots;
+
+    slots.forEach(function(slot) {
+        var displayText = formatSlotDisplay(slot);
+        var status = slot.status || 'UNKNOWN';
+
+        // Add to update dropdown (only AVAILABLE slots can be updated)
+        if (updateSelect && status === 'AVAILABLE') {
+            var option = document.createElement('option');
+            option.value = slot.slotId;
+            option.textContent = displayText;
+            updateSelect.appendChild(option);
+        }
+
+        // Add to deactivate dropdown (only AVAILABLE slots can be deactivated)
+        if (deactivateSelect && status === 'AVAILABLE') {
+            var option = document.createElement('option');
+            option.value = slot.slotId;
+            option.textContent = displayText;
+            deactivateSelect.appendChild(option);
+        }
+    });
+}
+
+// Format slot for display in dropdown
+function formatSlotDisplay(slot) {
+    var dayNames = {
+        'MONDAY': 'Monday',
+        'TUESDAY': 'Tuesday',
+        'WEDNESDAY': 'Wednesday',
+        'THURSDAY': 'Thursday',
+        'FRIDAY': 'Friday',
+        'SATURDAY': 'Saturday',
+        'SUNDAY': 'Sunday'
+    };
+    var day = dayNames[slot.dayOfWeek] || slot.dayOfWeek || 'Unknown';
+    var start = formatTime(slot.startTime);
+    var end = formatTime(slot.endTime);
+    var status = slot.status || 'UNKNOWN';
+    return day + ' ' + start + '-' + end + ' (' + status + ')';
+}
+
+// Handle slot selection for update - auto-fill the form fields
+function onSlotSelectForUpdate(slotSelect) {
+    var slotId = slotSelect.value;
+    if (!slotId || !window.specialistSlotsCache) return;
+
+    var slot = window.specialistSlotsCache.find(function(s) { return s.slotId == slotId; });
+    if (!slot) return;
+
+    // Auto-fill day of week
+    var daySelect = document.getElementById('req-slot-update-day');
+    if (daySelect) {
+        daySelect.value = slot.dayOfWeek || '';
+    }
+
+    // Auto-fill start time
+    var startInput = document.getElementById('req-slot-update-start');
+    if (startInput) {
+        startInput.value = slot.startTime ? slot.startTime.substring(0, 5) : '';
+    }
+
+    // Auto-fill end time
+    var endInput = document.getElementById('req-slot-update-end');
+    if (endInput) {
+        endInput.value = slot.endTime ? slot.endTime.substring(0, 5) : '';
+    }
+}
+
+async function submitProfileUpdateRequest() {
+    var fee = document.getElementById('req-profile-fee').value;
+    var info = document.getElementById('req-profile-info').value;
+    var reason = document.getElementById('req-profile-reason').value;
+
+    if (!fee && !info) {
+        showError('Please provide at least one field to update (fee or information)');
+        return;
+    }
+
+    var requestedValue = {};
+    if (fee) requestedValue.fee = parseFloat(fee);
+    if (info) requestedValue.information = info;
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: 'PROFILE',
+        actionType: 'UPDATE',
+        requestedValue: JSON.stringify(requestedValue),
+        reason: reason || ''
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Profile update request submitted successfully!');
+            document.getElementById('request-profile-form').reset();
+            loadMyRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting request: ' + error.message);
+    }
+}
+
+async function submitCategoryChangeRequest() {
+    var categoryId = document.getElementById('req-category-id').value;
+    var reason = document.getElementById('req-category-reason').value;
+
+    if (!categoryId) {
+        showError('Please select a category from the dropdown');
+        return;
+    }
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: 'CATEGORY',
+        actionType: 'UPDATE',
+        requestedValue: JSON.stringify({ categoryId: parseInt(categoryId) }),
+        reason: reason || ''
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Category change request submitted successfully!');
+            document.getElementById('request-category-form').reset();
+            loadMyRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting request: ' + error.message);
+    }
+}
+
+async function submitSlotCreateRequest() {
+    var dayOfWeek = document.getElementById('req-slot-create-day').value;
+    var startTime = document.getElementById('req-slot-create-start').value;
+    var endTime = document.getElementById('req-slot-create-end').value;
+    var reason = document.getElementById('req-slot-create-reason').value;
+
+    if (!dayOfWeek || !startTime || !endTime) {
+        showError('Please fill in all slot fields');
+        return;
+    }
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: 'SLOT',
+        actionType: 'CREATE',
+        requestedValue: JSON.stringify({ dayOfWeek: dayOfWeek, startTime: startTime, endTime: endTime }),
+        reason: reason || ''
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Slot create request submitted successfully!');
+            document.getElementById('request-slot-create-form').reset();
+            loadMyRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting request: ' + error.message);
+    }
+}
+
+async function submitSlotUpdateRequest() {
+    var slotId = document.getElementById('req-slot-update-id').value;
+    var dayOfWeek = document.getElementById('req-slot-update-day').value;
+    var startTime = document.getElementById('req-slot-update-start').value;
+    var endTime = document.getElementById('req-slot-update-end').value;
+    var reason = document.getElementById('req-slot-update-reason').value;
+
+    if (!slotId) {
+        showError('Please select a slot from the dropdown');
+        return;
+    }
+
+    var requestedValue = { slotId: parseInt(slotId) };
+    if (dayOfWeek) requestedValue.dayOfWeek = dayOfWeek;
+    if (startTime) requestedValue.startTime = startTime;
+    if (endTime) requestedValue.endTime = endTime;
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: 'SLOT',
+        actionType: 'UPDATE',
+        targetId: parseInt(slotId),
+        requestedValue: JSON.stringify(requestedValue),
+        reason: reason || ''
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Slot update request submitted successfully!');
+            document.getElementById('request-slot-update-form').reset();
+            // Reload slots to refresh dropdown
+            loadSlotsForRequest();
+            loadMyRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting request: ' + error.message);
+    }
+}
+
+async function submitSlotDeactivateRequest() {
+    var slotId = document.getElementById('req-slot-deactivate-id').value;
+    var reason = document.getElementById('req-slot-deactivate-reason').value;
+
+    if (!slotId) {
+        showError('Please select a slot from the dropdown');
+        return;
+    }
+
+    var requestBody = {
+        specialistId: currentUser.specialistId,
+        requestType: 'SLOT',
+        actionType: 'DEACTIVATE',
+        targetId: parseInt(slotId),
+        requestedValue: JSON.stringify({ slotId: parseInt(slotId), status: 'UNAVAILABLE' }),
+        reason: reason || ''
+    };
+
+    clearDebug();
+    setDebugMethod('POST');
+    setDebugUrl('/api/specialist-requests');
+    setDebugRequest(requestBody);
+
+    try {
+        var response = await fetch('/api/specialist-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Slot deactivate request submitted successfully!');
+            document.getElementById('request-slot-deactivate-form').reset();
+            // Reload slots to refresh dropdown
+            loadSlotsForRequest();
+            loadMyRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error submitting request: ' + error.message);
+    }
+}
+
+async function loadMyRequests() {
+    if (!currentUser || !currentUser.specialistId) {
+        showError('No specialist profile linked');
+        return;
+    }
+
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialist-requests/specialist/' + currentUser.specialistId);
+
+    try {
+        var response = await fetch('/api/specialist-requests/specialist/' + currentUser.specialistId);
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            displayMyRequests(data.data);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading requests: ' + error.message);
+    }
+}
+
+function displayMyRequests(requests) {
+    var list = document.getElementById('my-requests-list');
+
+    if (!requests || requests.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No requests found.</p></div>';
+        return;
+    }
+
+    var html = '<table><thead><tr>';
+    html += '<th>ID</th><th>Type</th><th>Details</th><th>Reason</th><th>Status</th><th>Manager Comment</th><th>Submitted</th>';
+    html += '</tr></thead><tbody>';
+
+    requests.forEach(function(r) {
+        var statusClass = getRequestStatusClass(r.status);
+        html += '<tr>';
+        html += '<td>' + r.requestId + '</td>';
+        html += '<td><strong>' + r.requestType + '</strong><br><span style="font-size:11px;color:#666;">' + r.actionType + '</span></td>';
+        html += '<td style="max-width:220px;">' + formatRequestValueReadable(r) + '</td>';
+        html += '<td>' + escapeHtml(r.reason || '-') + '</td>';
+        html += '<td><span class="status-badge ' + statusClass + '">' + r.status + '</span></td>';
+        html += '<td>' + escapeHtml(r.managerComment || '-') + '</td>';
+        html += '<td>' + formatDateTime(r.createdAt) + '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    list.innerHTML = html;
+}
+
+function getRequestStatusClass(status) {
+    var classes = {
+        'PENDING': 'status-badge-pending',
+        'APPROVED': 'status-badge-confirmed',
+        'REJECTED': 'status-badge-cancelled'
+    };
+    return classes[status] || '';
+}
+
+function formatRequestValue(value) {
+    if (!value) return '-';
+    try {
+        var obj = JSON.parse(value);
+        return escapeHtml(JSON.stringify(obj, null, 2));
+    } catch (e) {
+        return escapeHtml(value);
+    }
+}
+
+// Format request value in a human-readable way based on request type
+function formatRequestValueReadable(request) {
+    var value = request.requestedValue;
+    var type = request.requestType;
+    var action = request.actionType;
+
+    if (!value) return '-';
+
+    try {
+        var obj = JSON.parse(value);
+
+        if (type === 'PROFILE') {
+            var parts = [];
+            if (obj.fee) parts.push('Fee: $' + obj.fee);
+            if (obj.information) parts.push('Info: ' + obj.information.substring(0, 50) + (obj.information.length > 50 ? '...' : ''));
+            return parts.length > 0 ? parts.join('<br>') : formatRequestValue(value);
+        }
+
+        if (type === 'CATEGORY') {
+            if (obj.categoryId) {
+                return 'New Category ID: ' + obj.categoryId;
+            }
+        }
+
+        if (type === 'SLOT') {
+            var dayNames = {
+                'MONDAY': 'Monday',
+                'TUESDAY': 'Tuesday',
+                'WEDNESDAY': 'Wednesday',
+                'THURSDAY': 'Thursday',
+                'FRIDAY': 'Friday',
+                'SATURDAY': 'Saturday',
+                'SUNDAY': 'Sunday'
+            };
+
+            if (action === 'CREATE') {
+                var day = dayNames[obj.dayOfWeek] || obj.dayOfWeek;
+                return 'New Slot: ' + day + ' ' + (obj.startTime || '?') + '-' + (obj.endTime || '?');
+            }
+
+            if (action === 'UPDATE') {
+                var parts = [];
+                if (obj.dayOfWeek) parts.push(dayNames[obj.dayOfWeek] || obj.dayOfWeek);
+                if (obj.startTime) parts.push(obj.startTime);
+                if (obj.endTime) parts.push(obj.endTime);
+                return 'Update to: ' + (parts.length > 0 ? parts.join(' ') : formatRequestValue(value));
+            }
+
+            if (action === 'DEACTIVATE') {
+                return 'Deactivate Slot ID: ' + (obj.slotId || request.targetId || '-');
+            }
+        }
+
+        return formatRequestValue(value);
+    } catch (e) {
+        return escapeHtml(value);
+    }
+}
+
+function formatDateTime(dt) {
+    if (!dt) return '-';
+    if (typeof dt === 'string' && dt.indexOf('T') !== -1) {
+        return dt.replace('T', ' ').substring(0, 19);
+    }
+    return String(dt);
+}
+
+// ============= MANAGER REQUEST FUNCTIONS =============
+
+async function loadPendingRequests() {
+    clearDebug();
+    setDebugMethod('GET');
+    setDebugUrl('/api/specialist-requests/pending');
+
+    try {
+        var response = await fetch('/api/specialist-requests/pending');
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            displayPendingRequests(data.data);
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error loading pending requests: ' + error.message);
+    }
+}
+
+function displayPendingRequests(requests) {
+    var list = document.getElementById('pending-requests-list');
+
+    if (!requests || requests.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>No pending requests.</p></div>';
+        return;
+    }
+
+    var html = '<table><thead><tr>';
+    html += '<th>ID</th><th>Specialist</th><th>Type</th><th>Action</th><th>Details</th><th>Reason</th><th>Submitted</th><th>Actions</th>';
+    html += '</tr></thead><tbody>';
+
+    requests.forEach(function(r) {
+        html += '<tr>';
+        html += '<td>' + r.requestId + '</td>';
+        html += '<td>' + escapeHtml(r.specialistName || '-') + '</td>';
+        html += '<td><strong>' + r.requestType + '</strong></td>';
+        html += '<td>' + r.actionType + '</td>';
+        html += '<td style="max-width:200px;">' + formatRequestValueReadable(r) + '</td>';
+        html += '<td>' + escapeHtml(r.reason || '-') + '</td>';
+        html += '<td>' + formatDateTime(r.createdAt) + '</td>';
+        html += '<td>';
+        html += '<button onclick="approveRequest(' + r.requestId + ')" class="btn-small" style="background:#34c759;color:#fff;">Approve</button> ';
+        html += '<button onclick="rejectRequest(' + r.requestId + ')" class="btn-small" style="background:#ff3b30;color:#fff;">Reject</button>';
+        html += '</td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    list.innerHTML = html;
+}
+
+async function approveRequest(requestId) {
+    if (!confirm('Approve this request? This will apply the changes to the official data.')) {
+        return;
+    }
+
+    clearDebug();
+    setDebugMethod('PUT');
+    setDebugUrl('/api/specialist-requests/' + requestId + '/approve?managerId=' + (currentUser.managerId || ''));
+
+    try {
+        var response = await fetch('/api/specialist-requests/' + requestId + '/approve?managerId=' + (currentUser.managerId || ''), {
+            method: 'PUT'
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Request approved successfully!');
+            loadPendingRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error approving request: ' + error.message);
+    }
+}
+
+async function rejectRequest(requestId) {
+    var comment = prompt('Enter reason for rejection (optional):');
+    if (comment === null) return;
+
+    clearDebug();
+    setDebugMethod('PUT');
+    setDebugUrl('/api/specialist-requests/' + requestId + '/reject');
+
+    try {
+        var response = await fetch('/api/specialist-requests/' + requestId + '/reject?managerId=' + (currentUser.managerId || ''), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ managerComment: comment || '' })
+        });
+
+        var data = await response.json();
+        setDebugResponse(data);
+
+        if (response.ok && data.success) {
+            showMessage('Request rejected.');
+            loadPendingRequests();
+        } else {
+            showError(extractErrorMessage(data, response));
+        }
+    } catch (error) {
+        setDebugError(error.message);
+        showError('Error rejecting request: ' + error.message);
+    }
 }

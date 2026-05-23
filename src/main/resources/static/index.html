@@ -184,13 +184,175 @@
             
             <div id="specialist-content" class="hidden">
                 <div class="section-messages" id="specialist-messages"></div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3>My Schedule</h3>
-                        <button onclick="loadMySchedule()" class="btn-small">Refresh</button>
+
+                <!-- Specialist tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="showSpecialistTab('schedule')">My Schedule</button>
+                    <button class="tab-btn" onclick="showSpecialistTab('requests')">My Requests</button>
+                </div>
+
+                <!-- Tab: Schedule -->
+                <div id="specialist-tab-schedule" class="tab-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>My Schedule</h3>
+                            <button onclick="loadMySchedule()" class="btn-small">Refresh</button>
+                        </div>
+                        <div id="specialist-bookings" class="schedule-table"></div>
                     </div>
-                    <div id="specialist-bookings" class="schedule-table"></div>
+                </div>
+
+                <!-- Tab: Requests -->
+                <div id="specialist-tab-requests" class="tab-content">
+                    <!-- Submit Request Forms -->
+                    <div class="forms-row">
+                        <!-- Profile Update Request -->
+                        <div class="card">
+                            <h3>Request Profile Update</h3>
+                            <form id="request-profile-form">
+                                <div class="form-group">
+                                    <label>New Fee:</label>
+                                    <input type="number" step="0.01" id="req-profile-fee" placeholder="e.g. 150.00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Information:</label>
+                                    <textarea id="req-profile-info" rows="3" placeholder="New description..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Reason:</label>
+                                    <input type="text" id="req-profile-reason" placeholder="Reason for change">
+                                </div>
+                                <button type="button" onclick="submitProfileUpdateRequest()" class="btn-primary">Submit Request</button>
+                            </form>
+                        </div>
+
+                        <!-- Category Change Request -->
+                        <div class="card">
+                            <h3>Request Category Change</h3>
+                            <form id="request-category-form">
+                                <div class="form-group">
+                                    <label>New Category:</label>
+                                    <select id="req-category-id">
+                                        <option value="">Select a category...</option>
+                                        <!-- Categories loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Reason:</label>
+                                    <input type="text" id="req-category-reason" placeholder="Reason for change">
+                                </div>
+                                <button type="button" onclick="submitCategoryChangeRequest()" class="btn-primary">Submit Request</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Slot Request Forms -->
+                    <div class="forms-row">
+                        <!-- Slot Create Request -->
+                        <div class="card">
+                            <h3>Request Slot Creation</h3>
+                            <form id="request-slot-create-form">
+                                <div class="form-group">
+                                    <label>Day of Week:</label>
+                                    <select id="req-slot-create-day">
+                                        <option value="">Select day</option>
+                                        <option value="MONDAY">Monday</option>
+                                        <option value="TUESDAY">Tuesday</option>
+                                        <option value="WEDNESDAY">Wednesday</option>
+                                        <option value="THURSDAY">Thursday</option>
+                                        <option value="FRIDAY">Friday</option>
+                                        <option value="SATURDAY">Saturday</option>
+                                        <option value="SUNDAY">Sunday</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Start:</label>
+                                        <input type="time" id="req-slot-create-start">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>End:</label>
+                                        <input type="time" id="req-slot-create-end">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Reason:</label>
+                                    <input type="text" id="req-slot-create-reason" placeholder="Reason for creation">
+                                </div>
+                                <button type="button" onclick="submitSlotCreateRequest()" class="btn-primary">Submit Request</button>
+                            </form>
+                        </div>
+
+                        <!-- Slot Update Request -->
+                        <div class="card">
+                            <h3>Request Slot Update</h3>
+                            <form id="request-slot-update-form">
+                                <div class="form-group">
+                                    <label>Select Slot:</label>
+                                    <select id="req-slot-update-id" onchange="onSlotSelectForUpdate(this)">
+                                        <option value="">Select a slot...</option>
+                                        <!-- Slots loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Day of Week:</label>
+                                    <select id="req-slot-update-day">
+                                        <option value="">Keep current</option>
+                                        <option value="MONDAY">Monday</option>
+                                        <option value="TUESDAY">Tuesday</option>
+                                        <option value="WEDNESDAY">Wednesday</option>
+                                        <option value="THURSDAY">Thursday</option>
+                                        <option value="FRIDAY">Friday</option>
+                                        <option value="SATURDAY">Saturday</option>
+                                        <option value="SUNDAY">Sunday</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>New Start:</label>
+                                        <input type="time" id="req-slot-update-start">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>New End:</label>
+                                        <input type="time" id="req-slot-update-end">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Reason:</label>
+                                    <input type="text" id="req-slot-update-reason" placeholder="Reason for update">
+                                </div>
+                                <button type="button" onclick="submitSlotUpdateRequest()" class="btn-primary">Submit Request</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Slot Deactivate Request -->
+                    <div class="card">
+                        <h3>Request Slot Deactivation</h3>
+                        <form id="request-slot-deactivate-form">
+                            <div class="form-group">
+                                <label>Select Slot:</label>
+                                <select id="req-slot-deactivate-id">
+                                    <option value="">Select a slot...</option>
+                                    <!-- Slots loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason:</label>
+                                <input type="text" id="req-slot-deactivate-reason" placeholder="Reason for deactivation">
+                            </div>
+                            <button type="button" onclick="submitSlotDeactivateRequest()" class="btn-primary">Submit Request</button>
+                        </form>
+                    </div>
+
+                    <!-- My Requests List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>My Submitted Requests</h3>
+                            <button onclick="loadMyRequests()" class="btn-small">Refresh</button>
+                        </div>
+                        <div id="my-requests-list"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -210,6 +372,7 @@
                 <button class="tab-btn" onclick="showManagerTab('specialists')">Specialists</button>
                 <button class="tab-btn" onclick="showManagerTab('slots')">Slots</button>
                 <button class="tab-btn" onclick="showManagerTab('levels')">Levels</button>
+                <button class="tab-btn" onclick="showManagerTab('requests')">Requests</button>
             </div>
             
             <!-- Tab: Bookings -->
@@ -471,6 +634,17 @@
                         <button onclick="loadLevels()" class="btn-small">Refresh</button>
                     </div>
                     <div id="levels-list"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Requests -->
+            <div id="tab-requests" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Pending Specialist Requests</h3>
+                        <button onclick="loadPendingRequests()" class="btn-small">Refresh</button>
+                    </div>
+                    <div id="pending-requests-list"></div>
                 </div>
             </div>
         </section>

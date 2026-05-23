@@ -45,7 +45,8 @@ public interface SpecialistRepository extends JpaRepository<Specialist, Long> {
            "LOWER(s.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.level.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.information) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(CAST(s.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "LOWER(CAST(s.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "CAST(s.fee AS string) LIKE CONCAT('%', :keyword, '%')) " +
            "AND (:categoryId IS NULL OR s.category.categoryId = :categoryId) " +
            "AND (:levelId IS NULL OR s.level.levelId = :levelId) " +
            "AND (:status IS NULL OR s.status = :status) " +
