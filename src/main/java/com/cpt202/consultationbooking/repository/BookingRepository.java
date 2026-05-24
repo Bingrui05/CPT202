@@ -11,20 +11,32 @@ import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    
-    List<Booking> findByCustomer_CustomerId(Long customerId);
-    
-    List<Booking> findBySpecialist_SpecialistId(Long specialistId);
-    
-    boolean existsBySlot_SlotId(Long slotId);
-    
-    boolean existsBySlot_SlotIdAndStatusIn(Long slotId, List<BookingStatus> statuses);
-    
-    List<Booking> findBySlot_SlotIdAndStatusIn(Long slotId, List<BookingStatus> statuses);
-    
-    boolean existsBySpecialist_SpecialistIdAndStatusIn(Long specialistId, List<BookingStatus> statuses);
-    
-    boolean existsBySlot_SlotIdAndAppointmentDateAndStatusIn(Long slotId, LocalDate appointmentDate, List<BookingStatus> statuses);
 
-    Optional<Booking> findBySlot_SlotIdAndAppointmentDateAndStatusIn(Long slotId, LocalDate appointmentDate, List<BookingStatus> statuses);
+    List<Booking> findByCustomer_CustomerId(Long customerId);
+
+    List<Booking> findBySpecialist_SpecialistId(Long specialistId);
+
+    boolean existsBySlot_SlotId(Long slotId);
+
+    boolean existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
+            Long slotId,
+            LocalDate appointmentDate,
+            List<BookingStatus> statuses
+    );
+
+    Optional<Booking> findBySlot_SlotIdAndAppointmentDateAndStatusIn(
+            Long slotId,
+            LocalDate appointmentDate,
+            List<BookingStatus> statuses
+    );
+
+    boolean existsBySpecialist_SpecialistIdAndStatusIn(
+            Long specialistId,
+            List<BookingStatus> statuses
+    );
+
+    boolean existsBySlot_SlotIdAndStatusIn(
+            Long slotId,
+            List<BookingStatus> statuses
+    );
 }
