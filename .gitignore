@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local concurrency test outputs
+concurrency_test_results/
+*.save

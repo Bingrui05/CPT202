@@ -236,7 +236,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     eq(1L), any(LocalDate.class), any())).thenReturn(false);
             when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> {
@@ -269,7 +269,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     1L, futureMon, Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED)))
                     .thenReturn(true);
@@ -289,7 +289,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     1L, futureMon, Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED)))
                     .thenReturn(true);
@@ -307,7 +307,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     1L, futureMon, Arrays.asList(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED)))
                     .thenReturn(true);
@@ -324,7 +324,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     eq(1L), any(LocalDate.class), any())).thenReturn(false);
             when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> {
@@ -377,7 +377,7 @@ class BookingServiceTest {
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
             // slot specialist mismatch throws BEFORE save is called, so save stub is not needed
-            when(slotRepository.findById(99L)).thenReturn(Optional.of(otherSpecialistSlot));
+            when(slotRepository.findByIdForUpdate(99L)).thenReturn(Optional.of(otherSpecialistSlot));
 
             assertThatThrownBy(() -> bookingService.createBooking(request))
                     .isInstanceOf(BusinessException.class)
@@ -397,7 +397,7 @@ class BookingServiceTest {
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
             // day-of-week mismatch throws BEFORE existsBySlot or save are called
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
 
             assertThatThrownBy(() -> bookingService.createBooking(request))
                     .isInstanceOf(BusinessException.class)
@@ -415,7 +415,7 @@ class BookingServiceTest {
 
             when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
             when(specialistRepository.findById(1L)).thenReturn(Optional.of(testSpecialist));
-            when(slotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+            when(slotRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(testSlot));
 
             assertThatThrownBy(() -> bookingService.createBooking(pastRequest))
                     .isInstanceOf(BusinessException.class)
@@ -438,7 +438,7 @@ class BookingServiceTest {
             RescheduleBookingRequest request = new RescheduleBookingRequest(2L, futureDate(DayOfWeek.MONDAY));
 
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(slotRepository.findById(2L)).thenReturn(Optional.of(testSlot2));
+            when(slotRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(testSlot2));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     eq(2L), any(LocalDate.class), any())).thenReturn(false);
             when(bookingRepository.save(any(Booking.class))).thenReturn(testBooking);
@@ -460,7 +460,7 @@ class BookingServiceTest {
             RescheduleBookingRequest request = new RescheduleBookingRequest(2L, futureDate(DayOfWeek.MONDAY));
 
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(slotRepository.findById(2L)).thenReturn(Optional.of(testSlot2));
+            when(slotRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(testSlot2));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     eq(2L), any(LocalDate.class), any())).thenReturn(false);
             when(bookingRepository.save(any(Booking.class))).thenReturn(testBooking);
@@ -479,7 +479,7 @@ class BookingServiceTest {
             RescheduleBookingRequest request = new RescheduleBookingRequest(99L, futureDate(DayOfWeek.MONDAY));
 
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(slotRepository.findById(99L)).thenReturn(Optional.of(otherSpecialistSlot));
+            when(slotRepository.findByIdForUpdate(99L)).thenReturn(Optional.of(otherSpecialistSlot));
 
             assertThatThrownBy(() -> bookingService.rescheduleBooking(1L, request))
                     .isInstanceOf(BusinessException.class)
@@ -519,7 +519,7 @@ class BookingServiceTest {
             RescheduleBookingRequest request = new RescheduleBookingRequest(2L, futureDate(DayOfWeek.MONDAY));
 
             when(bookingRepository.findById(1L)).thenReturn(Optional.of(testBooking));
-            when(slotRepository.findById(2L)).thenReturn(Optional.of(testSlot2));
+            when(slotRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(testSlot2));
             when(bookingRepository.existsBySlot_SlotIdAndAppointmentDateAndStatusIn(
                     eq(2L), any(LocalDate.class), any())).thenReturn(true);
 
